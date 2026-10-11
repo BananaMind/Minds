@@ -176,7 +176,7 @@ export class Host extends EventEmitter {
         const provider = p.provider || bot.provider || 'codex';
         if (!['codex', 'openai'].includes(provider)) throw new Error('Unknown model provider');
         const model = p.model ?? (p.provider && p.provider !== (bot.provider || 'codex') ? (provider === 'openai' ? this.settings.get().openai.models[0] : MODELS[0].id) : bot.model);
-        if (!(provider === 'openai' ? validModel(model) : isModel(model))) throw new Error('Choose a valid model ID.');
+        if (!(provider === 'openai' ? validModel(model) : isModel(model))) throw new Error('Unknown model. Choose a valid model ID.');
         bot.model = model; bot.provider = provider;
         if (p.effort !== undefined) { if (!isEffort(p.effort)) throw new Error('Unknown effort'); bot.effort = p.effort; }
         if (p.permission !== undefined) {

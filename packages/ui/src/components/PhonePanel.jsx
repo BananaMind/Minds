@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import QRCode from 'qrcode';
+import { RelaySettings } from './RelaySettings.jsx';
 
 const ago = (ts) => {
   if (!ts) return 'never connected';
@@ -24,8 +25,9 @@ export function PhonePanel({ state, api, dispatch }) {
   return (
     <div>
       <div class="sec-head"><b>Phone</b><span class={`status ${m.enabled ? 'ok' : ''}`}>{m.enabled ? 'On' : 'Off'}</span></div>
-      <p class="muted">Control your bots from your phone. Your phone connects <b>directly</b> to this computer, encrypted end to end. There's no Minds server; public relay servers only help the two find each other and can't read anything.</p>
+      <p class="muted">Control your bots from your phone over an encrypted connection. It connects directly when possible, or through your configured relay when the network blocks a direct connection.</p>
       <label class="check big"><input type="checkbox" checked={m.enabled} onChange={(e) => run(api.call('mobile.setEnabled', { enabled: e.target.checked }))} /> Allow phones to connect</label>
+      <RelaySettings settings={s} api={api} dispatch={dispatch} />
 
       {m.enabled && (
         <>

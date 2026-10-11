@@ -82,6 +82,7 @@ input, textarea, select { font: inherit; color: inherit; }
 
 /* ---------- bot icon ---------- */
 .boticon { position: relative; display: inline-block; flex: none; line-height: 0; }
+.relay-settings { margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .boticon svg { stroke: none; }
 .boticon.is-working .bot-eyes { animation: bot-glance 5.8s cubic-bezier(.45, 0, .25, 1) var(--eye-delay, 0s) infinite; }
 .boticon.is-working .bot-eye { transform-box: fill-box; transform-origin: center; animation: bot-eye-size 4.3s ease-in-out var(--eye-delay, 0s) infinite; }

@@ -1,7 +1,7 @@
 // Phone-side client: pairs with a host via QR, reconnects with its device key, and exposes the same
 // {call, on, onStatus, close} API the UI uses over the local WebSocket.
 import { Signaling, DEFAULT_TRACKERS } from './signaling.js';
-import { dial } from './link.js';
+import { dial, requestIceServers } from './link.js';
 import { Emitter } from './emitter.js';
 import { dbg } from './log.js';
 import {
@@ -60,6 +60,26 @@ export class PhoneClient {
   host() { return this.storage.get('host'); }
   async forget() { await this.storage.del('host'); this.close(); }
 
+  async #relay(signaling, room, signal) {
+    if (this.iceServers !== undefined) return { iceServers: this.iceServers };
+    try { return await requestIceServers({ signaling, room, signal }); }
+    catch (e) {
+      if (e.code !== 'ICE_BOOTSTRAP_TIMEOUT') throw e;
+      dbg('relay: computer did not supply settings; trying a direct connection');
+      return {};
+    }
+  }
+
+  #session(ch, config) {
+    const session = new Session(ch);
+    // Renew short-lived credentials by reconnecting before they expire. Bot work stays on the host.
+    if (config.expiresAt) {
+      const timer = setTimeout(() => session.close(), Math.max(1000, config.expiresAt - Date.now() - 60_000));
+      session.closed.then(() => clearTimeout(timer));
+    }
+    return session;
+  }
+
   /**
    * Pair using the text from the desktop QR code. Resolves with the stored host record (+ a live session).
    * A dropped connection is retried automatically; a refusal from the computer is final.
@@ -88,7 +108,9 @@ export class PhoneClient {
     let ch, ok = false;
     dbg('pair: attempt', attempt, 'dialing');
     try {
-      ch = await dial({ RTC: this.RTC, signaling: sig, room: await pairRoom(p.r, p.s), iceServers: this.iceServers, timeoutMs });
+      const room = await pairRoom(p.r, p.s);
+      const config = await this.#relay(sig, room);
+      ch = await dial({ RTC: this.RTC, signaling: sig, room, iceServers: config.iceServers, timeoutMs });
       stage = 'greeting your computer'; dbg('pair: connected, waiting for hello');
       const hello = await nextMessage(ch, 'hello');
       if (!hello.host?.sign || !hello.host?.dh || (await fingerprint(hello.host.sign, hello.host.dh)) !== p.id) throw Object.assign(new Error('This is not the computer whose code you scanned. Pairing cancelled.'), { fatal: true });
@@ -101,7 +123,7 @@ export class PhoneClient {
       const host = { id: p.id, sign: hello.host.sign, dh: hello.host.dh, name: String(hello.host.name || 'Computer').slice(0, 40), trackers: p.tr || null, deviceId, pairedAt: Date.now() };
       await this.storage.set('host', host);
       ok = true; dbg('pair: done');
-      return { ...host, session: new Session(ch) };
+      return { ...host, session: this.#session(ch, config) };
     } catch (e) { return fail(e); }
     finally { if (!ok) { try { ch?.close(); } catch {} } }
   }
@@ -115,13 +137,15 @@ export class PhoneClient {
     const sig = this.#signaling(host.trackers);
     let ch;
     try {
-      ch = await dial({ RTC: this.RTC, signaling: sig, room: await deviceRoom(host.id, host.deviceId, shared), iceServers: this.iceServers, timeoutMs, signal });
+      const room = await deviceRoom(host.id, host.deviceId, shared);
+      const config = await this.#relay(sig, room, signal);
+      ch = await dial({ RTC: this.RTC, signaling: sig, room, iceServers: config.iceServers, timeoutMs, signal });
       const hello = await nextMessage(ch, 'hello');
       const nonceP = b64u(rand(16));
       await sendJson(ch, { t: 'auth', deviceId: host.deviceId, nonce: nonceP, sig: await signMsg(id.sign.privateKey, authMsg(host.deviceId, hello.nonce, nonceP)) });
       const ready = await nextMessage(ch, 'ready');
       if (!(await verifyMsg(await importSignPub(host.sign), ready.sig, readyMsg(host.deviceId, nonceP, hello.nonce)))) throw new Error('Host identity check failed.');
-      return new Session(ch);
+      return this.#session(ch, config);
     } catch (e) { try { ch?.close(); } catch {} throw e; }
   }
 }

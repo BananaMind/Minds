@@ -73,7 +73,7 @@ function PairScreen({ phone, onPaired }) {
             </details>
           </>
         )}
-        <p class="muted tiny">Your phone connects directly to your computer, encrypted end to end. Nothing passes through a Minds server.</p>
+        <p class="muted tiny">Your phone connects to your computer with end-to-end encryption. For mobile data, configure a relay in Phone settings on the computer.</p>
       </div>
     </div>
   );

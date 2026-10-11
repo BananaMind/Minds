@@ -121,6 +121,7 @@ export class Host extends EventEmitter {
 
       case 'mobile.status': return this.mobile.status();
       case 'mobile.log': return { log: recentLog() };
+      case 'mobile.relay.test': return this.mobile.testRelay();
       case 'mobile.setEnabled': {
         this.settings.set({ mobileEnabled: Boolean(p.enabled) });
         if (p.enabled) await this.mobile.start(); else this.mobile.stop();
@@ -134,7 +135,11 @@ export class Host extends EventEmitter {
 
       case 'host.shutdown': setTimeout(() => EventEmitter.prototype.emit.call(this, 'shutdown'), 100); return { ok: true };
 
-      case 'settings.set': { const s = this.settings.set(p.patch); this.emit('settings.updated', { settings: s }); return s; }
+      case 'settings.set': {
+        const s = this.settings.set(p.patch);
+        if (p.patch && 'mobileRelay' in p.patch) this.mobile?.relay.clear();
+        this.emit('settings.updated', { settings: s }); return s;
+      }
       case 'auth.status': return authStatus();
       case 'auth.login': {
         startLogin().then((auth) => this.emit('auth.updated', { auth }));

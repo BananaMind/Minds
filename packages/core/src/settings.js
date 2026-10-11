@@ -3,6 +3,7 @@ import { settingsFile } from './paths.js';
 import { readJson, writeJson } from './store.js';
 import { DEFAULT_MODEL, DEFAULT_EFFORT, isModel, isEffort } from './models.js';
 import { DEFAULT_PERMISSION, isPermission } from './permissions.js';
+import { normalizeRelay, publicRelay } from './relay.js';
 
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -18,6 +19,7 @@ export function defaultSettings() {
     autoSendTranscript: true,
     mobileEnabled: false,      // phone access (P2P) is off until you turn it on
     mobileCanApprove: true,    // may a paired phone approve risky actions?
+    mobileRelay: { provider: 'none' },
   };
 }
 
@@ -30,8 +32,8 @@ export class Settings {
   get() { return this.data; }
   /** Settings safe to send to clients (never the raw key). */
   public() {
-    const { openrouterKey, ...rest } = this.data;
-    return { ...rest, openrouterConnected: Boolean(openrouterKey) };
+    const { openrouterKey, mobileRelay, ...rest } = this.data;
+    return { ...rest, mobileRelay: publicRelay(mobileRelay), openrouterConnected: Boolean(openrouterKey) };
   }
   set(patch) {
     const next = { ...this.data };
@@ -40,7 +42,8 @@ export class Settings {
       if (k === 'defaultModel' && !isModel(v)) continue;
       if (k === 'defaultEffort' && !isEffort(v)) continue;
       if (k === 'defaultPermission' && !isPermission(v)) continue;
-      if (k === 'openrouterKey') next[k] = String(v || '').trim();
+      if (k === 'mobileRelay') next[k] = normalizeRelay(v, this.data.mobileRelay);
+      else if (k === 'openrouterKey') next[k] = String(v || '').trim();
       else if (k === 'userName') next[k] = String(v || '').trim().slice(0, 40) || this.data.userName;
       else next[k] = v;
     }

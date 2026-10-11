@@ -2,13 +2,14 @@
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import {
-  Signaling, listen, DEFAULT_TRACKERS,
+  Signaling, listen, gathered, DEFAULT_TRACKERS,
   newIdentity, exportIdentityJwk, importIdentityJwk, exportPub, importSignPub, importDhPub, dhBits, signMsg, verifyMsg,
   fingerprint, pairRoom, deviceRoom, b64u, unb64u, rand, equal, dbg,
 } from '@minds/p2p';
 import { encodePairing, nextMessage, sendJson, authMsg, readyMsg, pairedMsg, pairProof, VERSION } from '@minds/p2p/protocol';
 import { identityFile, devicesFile } from './paths.js';
 import { readJson, writeJson, newId } from './store.js';
+import { RelayManager } from './relay.js';
 
 const PAIR_TTL_MS = 5 * 60_000;
 const CONFIRM_TTL_MS = 2 * 60_000;
@@ -19,6 +20,7 @@ const cleanName = (s) => String(s || 'Phone').replace(/[\u0000-\u001f\u007f]/g, 
 export class MobileManager {
   constructor(host, server, { trackers, RTC, iceServers } = {}) {
     this.host = host; this.server = server; this.RTC = RTC; this.iceServers = iceServers;
+    this.relay = new RelayManager(host.settings);
     this.trackers = trackers || (process.env.MINDS_TRACKERS ? process.env.MINDS_TRACKERS.split(',') : null) || DEFAULT_TRACKERS;
     this.devices = readJson(devicesFile(), []);
     this.signaling = null; this.rooms = new Map(); this.sessions = new Map();
@@ -77,7 +79,7 @@ export class MobileManager {
     const r = b64u(rand(16)), s = b64u(rand(16)), expiresAt = Date.now() + PAIR_TTL_MS;
     const session = { id: newId('p_'), r, s, expiresAt, done: false, active: false, bad: 0 };
     const room = await pairRoom(r, s);
-    session.listener = listen({ RTC: this.RTC, signaling: this.signaling, room, iceServers: this.iceServers, onChannel: (ch) => this.#onPairChannel(ch, session) });
+    session.listener = listen({ RTC: this.RTC, signaling: this.signaling, room, getIceServers: () => this.#relayConfig(), onChannel: (ch) => this.#onPairChannel(ch, session) });
     session.timer = setTimeout(() => { if (this.pairing === session && !session.active) this.cancelPairing(); }, PAIR_TTL_MS);
     this.pairing = session;
     this.emit('mobile.updated', this.status());
@@ -87,6 +89,24 @@ export class MobileManager {
   }
 
   #hostName() { try { return (process.env.HOSTNAME || fs.readFileSync('/etc/hostname', 'utf8')).trim().slice(0, 40) || 'Computer'; } catch { return 'Computer'; } }
+
+  #relayConfig() { return this.iceServers !== undefined ? Promise.resolve({ iceServers: this.iceServers }) : this.relay.get(); }
+
+  async testRelay() {
+    this.relay.clear();
+    const config = await this.#relayConfig();
+    const turn = config.iceServers.some((s) => (Array.isArray(s.urls) ? s.urls : [s.urls]).some((url) => /^turns?:/.test(url)));
+    if (!turn) throw new Error('Configure a relay first.');
+    const RTC = this.RTC || (await import('node-datachannel/polyfill')).RTCPeerConnection;
+    const pc = new RTC({ iceServers: config.iceServers, iceTransportPolicy: 'relay' });
+    try {
+      pc.createDataChannel('relay-check');
+      await pc.setLocalDescription(await pc.createOffer());
+      await gathered(pc, true);
+      if (!/typ relay/.test(pc.localDescription?.sdp || '')) throw new Error('No relay connection was obtained. Check URLs, credentials and firewall rules.');
+      return { ok: true, message: 'Relay credentials work: a relay candidate was obtained. Test your phone on mobile data to confirm the full connection.' };
+    } finally { pc.close(); }
+  }
 
   cancelPairing() {
     const s = this.pairing; if (!s) return;
@@ -164,7 +184,7 @@ export class MobileManager {
     if (!this.signaling || this.rooms.has(device.id)) return;
     const shared = await dhBits(this.identity.dh.privateKey, await importDhPub(device.dh));
     const room = await deviceRoom(this.hostId, device.id, shared);
-    this.rooms.set(device.id, listen({ RTC: this.RTC, signaling: this.signaling, room, iceServers: this.iceServers, onChannel: (ch) => this.#onDeviceChannel(ch, device.id) }));
+    this.rooms.set(device.id, listen({ RTC: this.RTC, signaling: this.signaling, room, getIceServers: () => this.#relayConfig(), onChannel: (ch) => this.#onDeviceChannel(ch, device.id) }));
   }
 
   async #onDeviceChannel(ch, deviceId) {

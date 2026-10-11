@@ -131,8 +131,9 @@ Use the Android app to chat with bots running on your computer. Phone access is
 off by default: open **Profile & settings → Phone**, allow connections, then
 pair your phone with the QR code and approve it on the computer.
 
-The phone connects over an encrypted peer-to-peer connection. Your computer must
-be online; some restrictive networks cannot establish a connection.
+The phone connects over encrypted WebRTC. Your computer must be online. For
+mobile data or restrictive networks, configure a TURN relay under **Phone**.
+Use hosted Cloudflare TURN without a VPS, or supply your own TURN server.
 
 [**Android build, pairing, and security guide →**](docs/MOBILE.md)
 
@@ -142,6 +143,7 @@ be online; some restrictive networks cannot establish a connection.
 - [Windows setup and installer builds](docs/WINDOWS.md)
 - [macOS setup and installer builds](docs/MACOS.md)
 - [Android pairing and security](docs/MOBILE.md)
+- [Mobile data and TURN relay setup](docs/RELAY.md)
 
 Bot data and app settings live in `~/.minds` (`%USERPROFILE%\.minds` on Windows).
 Set `MINDS_HOME` to use another directory. Codex sign-in defaults to

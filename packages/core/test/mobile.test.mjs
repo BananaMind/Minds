@@ -41,7 +41,8 @@ test('phone access is off by default and pairing needs it enabled', async () => 
   assert.equal(mobile.enabled, true);
 });
 
-const p1 = phone();
+// Exercise encrypted ICE configuration discovery during both pairing and reconnect.
+const p1 = new PhoneClient({ RTC, storage: memoryStorage() });
 let session;
 
 test('pair via QR with desktop approval, then reconnect with the device key', async () => {
@@ -65,7 +66,7 @@ test('pair via QR with desktop approval, then reconnect with the device key', as
 });
 
 test('a paired phone is restricted: no settings, keys, sign-in, shutdown, pairing or deletes', async () => {
-  for (const [m, params] of [['settings.set', { patch: { openrouterKey: 'x' } }], ['auth.login', {}], ['host.shutdown', {}], ['mobile.status', {}], ['mobile.pair.start', {}], ['mobile.revoke', { deviceId: 'x' }], ['bots.delete', { id: 'x' }]]) {
+  for (const [m, params] of [['settings.set', { patch: { openrouterKey: 'x' } }], ['auth.login', {}], ['host.shutdown', {}], ['mobile.status', {}], ['mobile.relay.test', {}], ['mobile.pair.start', {}], ['mobile.revoke', { deviceId: 'x' }], ['bots.delete', { id: 'x' }]]) {
     await assert.rejects(session.call(m, params), /not allowed|only be changed on the computer/, m);
   }
   const bot = await session.call('bots.create', { name: 'FromPhone' });

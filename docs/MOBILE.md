@@ -6,18 +6,23 @@ A bot that can run commands is remote code execution on your PC. So the question
 ## How it connects
 
 ```
-phone (Capacitor app)  <—— WebRTC data channel (DTLS, direct) ——>  PC host (mindsd)
+phone (Capacitor app)  <—— WebRTC data channel (DTLS) ——>  PC host (mindsd)
           \                                                           /
            \—— encrypted offer/answer blobs via public MQTT brokers and WebTorrent trackers ——/
 ```
 
-- **Data path:** a direct WebRTC data channel (DTLS-encrypted). No Minds server, no relay of your traffic.
+- **Data path:** a DTLS-encrypted WebRTC data channel, direct when possible or through your configured
+  TURN relay. The relay forwards encrypted packets; it cannot read your chat.
 - **Finding each other:** the two sides swap WebRTC offers/answers through whichever of several public
   services is reachable (MQTT brokers, WebTorrent trackers). They are used only as a mailbox: every blob is
   AES-GCM encrypted under a key the relays never see, and the room name is a hash. Relays can see that
   *something* is using a room (timing, IPs) but not who, what, or any content, and cannot forge or alter it.
-- **NAT:** STUN only (public servers). There is no TURN, so a few strict networks (some carrier-grade NATs)
-  cannot connect. Same Wi-Fi and most home/mobile networks work.
+- **NAT:** public STUN servers help establish direct connections. For restrictive mobile carriers or
+  firewalls, configure Cloudflare TURN or a custom TURN server in **Profile & settings → Phone**.
+  Cloudflare is hosted; you do not need a VPS. See [relay setup](RELAY.md).
+- **Relay credentials:** updated phones request ICE settings over the encrypted signaling room before
+  connecting, including on their first pairing. The Cloudflare API token stays on the PC. Only temporary
+  relay credentials are sent to the phone, and connections renew before those credentials expire.
 
 ## Pairing (one time)
 

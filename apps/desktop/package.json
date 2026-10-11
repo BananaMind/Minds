@@ -1,0 +1,9 @@
+{
+  "name": "@minds/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": { "start": "electron ." },
+  "devDependencies": { "electron": "^44.0.0" }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "minds",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Minds — personal AI bots that live on your PC. Desktop GUI, CLI, and mobile remote.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "daemon": "node packages/core/bin/mindsd.js",
+    "cli": "node packages/cli/bin/minds.js",
+    "ui:build": "npm run build -w @minds/ui",
+    "desktop": "npm run ui:build && npm run start -w @minds/desktop",
+    "desktop:win": "npm run ui:build && node scripts/desktop-package.mjs",
+    "desktop:mac": "npm run ui:build && node scripts/desktop-package.mjs --mac",
+    "desktop:linux": "npm run ui:build && node scripts/desktop-package.mjs --linux",
+    "test": "node --test packages/core/test/ packages/p2p/test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "cross-spawn": "^7.0.6",
+    "electron-builder": "^26.15.3"
+  }
+}

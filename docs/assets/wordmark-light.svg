@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="88" viewBox="0 0 320 88" role="img" aria-label="Minds">
+  <g fill="#7c3aed">
+    <rect x="12" y="14" width="24" height="24" rx="8"/>
+    <rect x="42" y="14" width="24" height="24" rx="8" opacity=".65"/>
+    <rect x="12" y="44" width="24" height="24" rx="8" opacity=".65"/>
+    <rect x="42" y="44" width="24" height="24" rx="8"/>
+  </g>
+  <text x="88" y="64" fill="#18181b" font-family="Inter, system-ui, sans-serif" font-size="60" font-weight="700" letter-spacing="-2">Minds</text>
+</svg>

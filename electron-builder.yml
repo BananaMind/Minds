@@ -1,0 +1,37 @@
+appId: dev.minds.desktop
+productName: Minds
+directories:
+  app: release/desktop-stage
+  output: release/windows
+electronVersion: 44.0.0
+asar: false
+npmRebuild: false
+files:
+  - '**/*'
+linux:
+  target: AppImage
+  category: Utility
+  icon: docs/assets/icon.png
+  artifactName: Minds-${version}-${arch}.${ext}
+win:
+  target:
+    - target: nsis
+      arch: x64
+  artifactName: Minds-Setup-${version}-${arch}.${ext}
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.productivity
+  artifactName: Minds-${version}-${arch}.${ext}
+  identity: '-'
+  hardenedRuntime: false
+  extendInfo:
+    NSMicrophoneUsageDescription: Minds uses your microphone to transcribe voice messages for your bots.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false

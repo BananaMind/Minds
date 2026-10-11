@@ -1,0 +1,22 @@
+{
+  "name": "@minds/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "mindsd": "bin/mindsd.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./models": "./src/models.js"
+  },
+  "dependencies": {
+    "@minds/p2p": "*",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "croner": "^10.0.1",
+    "cross-spawn": "^7.0.6",
+    "node-datachannel": "^0.33.4",
+    "ws": "^8.22.0"
+  }
+}

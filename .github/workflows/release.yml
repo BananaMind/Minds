@@ -1,0 +1,27 @@
+name: Linux release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+jobs:
+  appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm run desktop:linux
+      - name: Publish AppImage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          cd release/linux
+          sha256sum *.AppImage > SHA256SUMS.txt
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "Minds $tag" --generate-notes --prerelease ./*.AppImage SHA256SUMS.txt

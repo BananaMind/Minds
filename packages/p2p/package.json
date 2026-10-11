@@ -1,0 +1,18 @@
+{
+  "name": "@minds/p2p",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Serverless-ish P2P for Minds: WebRTC data channels, E2E-authenticated pairing, signaling through public WebTorrent trackers (encrypted)",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./dev-tracker": "./src/dev-tracker.js",
+    "./protocol": "./src/protocol.js"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "node-datachannel": "^0.33.4"
+  }
+}

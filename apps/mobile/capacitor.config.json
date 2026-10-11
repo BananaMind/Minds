@@ -1,0 +1,17 @@
+{
+  "appId": "dev.minds.app",
+  "appName": "Minds",
+  "webDir": "../../packages/ui/dist",
+  "backgroundColor": "#090909",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK"
+    }
+  }
+}

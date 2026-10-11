@@ -1,0 +1,12 @@
+{
+  "name": "@minds/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "minds": "bin/minds.js"
+  },
+  "dependencies": {
+    "@minds/core": "*",
+    "qrcode": "^1.5.4"
+  }
+}

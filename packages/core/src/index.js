@@ -1,0 +1,11 @@
+export { Host } from './host.js';
+export { LocalServer, DEFAULT_PORT } from './server.js';
+export { MindsClient, ensureHost, hostAlive, readHostInfo } from './client.js';
+export * from './models.js';
+export { MINDS_HOME } from './paths.js';
+export * from './icons.js';
+export * from './permissions.js';
+export { MobileManager } from './mobile.js';
+export { PluginManager } from './plugins/manager.js';
+export { installWindowsAutostart, uninstallWindowsAutostart } from './windows.js';
+export { launchAgentPlist } from './macos.js';

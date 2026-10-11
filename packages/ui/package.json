@@ -1,0 +1,22 @@
+{
+  "name": "@minds/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "preact": "^10.27.0",
+    "marked": "^15.0.12",
+    "dompurify": "^3.2.6",
+    "qrcode": "^1.5.4",
+    "jsqr": "^1.4.0",
+    "@minds/p2p": "*"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "@preact/preset-vite": "^2.10.2"
+  }
+}

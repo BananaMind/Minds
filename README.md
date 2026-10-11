@@ -1,15 +1,13 @@
 <p align="center">
-  <picture>
-    <source srcset="docs/assets/wordmark-dark.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="docs/assets/wordmark-light.svg" media="(prefers-color-scheme: light)">
-    <img src="docs/assets/wordmark-light.svg" width="320" alt="Minds">
-  </picture>
+  <img src="docs/assets/banana-mascot.png" width="160" alt="Minds banana mascot">
 </p>
+
+<h1 align="center">Minds</h1>
 
 <p align="center">Personal AI bots that live on your computer.</p>
 
 <p align="center">
-  <img alt="Status: preview" src="https://img.shields.io/badge/status-preview-a78bfa?style=flat-square">
+  <img alt="Status: preview" src="https://img.shields.io/badge/status-preview-ffc400?style=flat-square">
   <img alt="Node.js 22.12 or newer" src="https://img.shields.io/badge/node-%E2%89%A522.12-339933?style=flat-square">
   <img alt="Linux, Windows and macOS" src="https://img.shields.io/badge/desktop-Linux%20%7C%20Windows%20%7C%20macOS-555?style=flat-square">
 </p>

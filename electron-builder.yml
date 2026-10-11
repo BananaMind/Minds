@@ -11,14 +11,16 @@ files:
 linux:
   target: AppImage
   category: Utility
-  icon: docs/assets/icon.png
+  icon: apps/desktop/assets/icon.png
   artifactName: Minds-${version}-${arch}.${ext}
 win:
+  icon: apps/desktop/assets/icon.ico
   target:
     - target: nsis
       arch: x64
   artifactName: Minds-Setup-${version}-${arch}.${ext}
 mac:
+  icon: apps/desktop/assets/icon.png
   target:
     - dmg
     - zip

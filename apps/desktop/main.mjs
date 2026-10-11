@@ -22,6 +22,7 @@ function showWindow() {
 function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 860, minWidth: 380, minHeight: 520,
+    icon: path.join(here, 'assets/icon.png'),
     backgroundColor: '#090909', frame: process.platform === 'darwin', title: 'Minds', autoHideMenuBar: true,
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 12, y: 10 } } : {}),
     webPreferences: { preload: path.join(here, 'preload.cjs'), contextIsolation: true, sandbox: false },
@@ -64,7 +65,7 @@ app.whenReady().then(async () => {
     n.show();
   });
 
-  tray = new Tray(nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbklEQVR4nGNgGAWjYBSMglEwCkbBKBgFwx0wMjAw/KeWYf8ZGBgYqGUY45ABSD6g1AAYF1BqAIxDsQGwQKbKADgHFJdgDMAagGoAagAGANUAXAMQGtAYQEoYUA1AiAGKDcA1AH0A+gB0YYgBAHnFFbH7a3XQAAAAAElFTkSuQmCC'));
+  tray = new Tray(nativeImage.createFromPath(path.join(here, 'assets/tray.png')));
   tray.setToolTip('Minds');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Open Minds', click: showWindow },

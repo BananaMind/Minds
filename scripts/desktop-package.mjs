@@ -21,6 +21,7 @@ fs.mkdirSync(stage, { recursive: true });
 const copy = (source, destination) => fs.cpSync(path.join(root, source), path.join(stage, destination || source), { recursive: true, filter: (p) => !p.split(path.sep).some((part) => ['node_modules', 'test', '.git'].includes(part)) });
 copy('apps/desktop/main.mjs');
 copy('apps/desktop/preload.cjs');
+copy('apps/desktop/assets');
 copy('packages/core/src');
 copy('packages/core/bin');
 copy('packages/p2p/src');

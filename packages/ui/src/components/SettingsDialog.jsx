@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Select, modelOptions, effortOptions } from './Select.jsx';
+import { ProviderSettings } from './ProviderSettings.jsx';
 import { PhonePanel } from './PhonePanel.jsx';
 
 export function SettingsDialog({ state, api, dispatch, onClose, mobile = false, onForget }) {
@@ -51,7 +52,7 @@ export function SettingsDialog({ state, api, dispatch, onClose, mobile = false, 
 
         <section>
           <div class="sec-head"><b>ChatGPT</b><span class={`status ${state.auth?.signedIn ? 'ok' : ''}`}>{state.auth?.signedIn ? `Connected${state.auth.email ? ` · ${state.auth.email}` : ''}` : 'Not connected'}</span></div>
-          <p class="muted">Powers every bot. Uses your ChatGPT sign-in (OAuth), no API key.</p>
+          <p class="muted">Powers bots using the ChatGPT provider. Uses your ChatGPT sign-in (OAuth), no API key.</p>
           <button class="btn" disabled={loggingIn} onClick={login}>{state.auth?.signedIn ? 'Sign in again' : 'Sign in with ChatGPT'}</button>
         </section>
 
@@ -65,15 +66,19 @@ export function SettingsDialog({ state, api, dispatch, onClose, mobile = false, 
           </div>
         </section>
 
+        <ProviderSettings state={state} api={api} dispatch={dispatch} />
+
         <section>
           <b>Preferences</b>
           <div class="grid">
             <label>Your name</label>
             <input class="field" value={name} onInput={(e) => setName(e.target.value)} onBlur={() => name !== s.userName && set({ userName: name })} />
+            <label>New bot provider</label>
+            <Select value={s.defaultProvider || 'codex'} options={[{ value: 'codex', label: 'ChatGPT' }, { value: 'openai', label: 'Compatible API / local' }]} onChange={v => { const model = state.models.find(m => (m.provider || 'codex') === v)?.id; if (model) set({ defaultProvider: v, defaultModel: model }); else setMsg('Add a model ID in compatible API settings first.'); }} />
             <label>New bots use</label>
             <div class="row">
-              <Select value={s.defaultModel} options={modelOptions(state.models)} onChange={(v) => set({ defaultModel: v })} />
-              <Select value={s.defaultEffort} options={effortOptions(state.efforts)} onChange={(v) => set({ defaultEffort: v })} />
+              <Select value={s.defaultModel} options={modelOptions(state.models.filter(m => (m.provider || 'codex') === (s.defaultProvider || 'codex')))} onChange={(v) => set({ defaultModel: v })} />
+              {s.defaultProvider !== 'openai' && <Select value={s.defaultEffort} options={effortOptions(state.efforts)} onChange={(v) => set({ defaultEffort: v })} />}
             </div>
             <label>New bots start in</label>
             <Select value={s.defaultPermission} onChange={(v) => set({ defaultPermission: v })} options={state.permissions.map((m) => ({ value: m.id, label: m.label, hint: '' }))} />

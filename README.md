@@ -44,6 +44,11 @@ npm run desktop
 Open your **profile → Profile & settings** and sign in with ChatGPT. Minds uses
 the Codex sign-in flow and can reuse an existing login on your computer.
 
+Or open **Profile & settings → OpenAI-compatible API / local models** and set
+your server’s base URL, optional API key, and model IDs. Discover models or enter
+them manually, then select **Compatible API / local** in a bot’s menu.
+Local models do not need ChatGPT sign-in. See [local model setup](docs/LOCAL-MODELS.md).
+
 An optional **OpenRouter** key enables voice transcription and model-based
 tool-call safety checks. Local safety rules remain available without that key.
 

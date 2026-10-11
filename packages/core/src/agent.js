@@ -1,4 +1,4 @@
-import { respond } from './providers/codex.js';
+import { respond } from './providers/index.js';
 import { TOOLS, toolByName } from './tools/index.js';
 import { clip } from './tools/util.js';
 import { review } from './safety.js';
@@ -134,7 +134,7 @@ export class BotRunner {
       const liveId = newId('m_');
       let live = '';
       const res = await this.request({
-        model: bot.model, effort: bot.effort, instructions,
+        model: bot.model, effort: bot.effort, instructions, provider: bot.provider || 'codex', config: settings.openai,
         input: buildInput(this.log.items), tools: [...TOOLS, ...pluginTools], signal, cacheKey: bot.id,
         onText: (d) => { live += d; host.emit('message.delta', { botId: bot.id, liveId, delta: d }); },
       }).catch((e) => { host.emit('message.discard', { botId: bot.id, liveId }); throw e; });

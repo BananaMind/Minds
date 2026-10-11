@@ -5,6 +5,7 @@ import { Settings } from './settings.js';
 import { BotStore } from './bots.js';
 import { BotRunner } from './agent.js';
 import { Scheduler } from './scheduler.js';
+import { listModels, validModel } from './providers/openai.js';
 import { authStatus, startLogin } from './codex-auth.js';
 import { transcribe } from './openrouter.js';
 import { MODELS, EFFORTS, isModel, isEffort, OPENROUTER_TRANSCRIBE_MODEL, OPENROUTER_SAFETY_MODEL } from './models.js';
@@ -70,7 +71,7 @@ export class Host extends EventEmitter {
       if (it.type === 'assistant' || (it.type === 'question' && it.status === 'pending') || (it.type === 'approval' && it.status === 'pending')) unread++;
     }
     return {
-      id: bot.id, name: bot.name, icon: bot.icon, model: bot.model, effort: bot.effort,
+      id: bot.id, name: bot.name, icon: bot.icon, model: bot.model, provider: bot.provider || 'codex', effort: bot.effort,
       permission: bot.permission || this.settings.get().defaultPermission,
       plugins: bot.plugins || [],
       createdAt: bot.createdAt, lastActivity: bot.lastActivity,
@@ -100,7 +101,7 @@ export class Host extends EventEmitter {
     switch (method) {
       case 'state': return {
         bots: this.bots.all().map((b) => this.view(b)), settings: this.settings.public(), auth: authStatus(),
-        models: MODELS, efforts: EFFORTS, permissions: PERMISSION_MODES, tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
+        models: [...MODELS.map(m => ({ ...m, provider: 'codex' })), ...(this.settings.get().openai?.models || []).map(id => ({ id, name: id, provider: 'openai', hint: 'Compatible API' }))], efforts: EFFORTS, permissions: PERMISSION_MODES, tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
         voice: { model: OPENROUTER_TRANSCRIBE_MODEL }, safety: { model: OPENROUTER_SAFETY_MODEL },
         schedules: this.scheduler.list(),
         ...(remote ? {} : { mobile: this.mobile?.status() ?? null }),
@@ -140,6 +141,10 @@ export class Host extends EventEmitter {
         if (p.patch && 'mobileRelay' in p.patch) this.mobile?.relay.clear();
         this.emit('settings.updated', { settings: s }); return s;
       }
+      case 'providers.models': {
+        if (remote) throw new Error('Providers can only be configured on the computer.');
+        return { models: await listModels(this.settings.get().openai) };
+      }
       case 'auth.status': return authStatus();
       case 'auth.login': {
         startLogin().then((auth) => this.emit('auth.updated', { auth }));
@@ -148,11 +153,17 @@ export class Host extends EventEmitter {
 
       case 'bots.create': {
         const s = this.settings.get();
-        const bot = this.bots.create({ name: p.name, model: isModel(p.model) ? p.model : s.defaultModel, effort: isEffort(p.effort) ? p.effort : s.defaultEffort });
+        const provider = p.provider || s.defaultProvider || 'codex';
+        if (!['codex', 'openai'].includes(provider)) throw new Error('Unknown model provider');
+        const fallback = provider === s.defaultProvider ? s.defaultModel : provider === 'openai' ? s.openai.models[0] : MODELS[0].id;
+        const model = p.model || fallback;
+        if (!(provider === 'openai' ? validModel(model) : isModel(model))) throw new Error('Choose a model in provider settings first.');
+        const bot = this.bots.create({ name: p.name, model, effort: isEffort(p.effort) ? p.effort : s.defaultEffort });
+        bot.provider = provider;
         if (remote && s.defaultPermission === 'bypass') bot.permission = 'default'; // a phone never creates a bypass-mode bot
         this.bots.save(bot);
         this.emit('bot.created', { bot: this.view(bot) });
-        if (authStatus().signedIn) {
+        if (provider === 'openai' || authStatus().signedIn) {
           this.runner(bot.id).submit(
             `[New bot created] You were just created and this is your very first moment with ${s.userName}. Do both of these now, in this one turn: (1) say hi in a single short sentence, saying you are ${bot.name} and are all set up and ready; (2) call the ask_user_question tool (required; do not ask in plain text) to ask what they mainly want help with, offering 4 short, varied options. They can change this later.`,
             'system', { hidden: true });
@@ -162,7 +173,11 @@ export class Host extends EventEmitter {
       case 'bots.update': {
         const bot = this.bots.get(p.id); if (!bot) throw new Error('Unknown bot');
         if (typeof p.name === 'string' && p.name.trim()) bot.name = p.name.trim().slice(0, 40);
-        if (p.model !== undefined) { if (!isModel(p.model)) throw new Error('Unknown model'); bot.model = p.model; }
+        const provider = p.provider || bot.provider || 'codex';
+        if (!['codex', 'openai'].includes(provider)) throw new Error('Unknown model provider');
+        const model = p.model ?? (p.provider && p.provider !== (bot.provider || 'codex') ? (provider === 'openai' ? this.settings.get().openai.models[0] : MODELS[0].id) : bot.model);
+        if (!(provider === 'openai' ? validModel(model) : isModel(model))) throw new Error('Choose a valid model ID.');
+        bot.model = model; bot.provider = provider;
         if (p.effort !== undefined) { if (!isEffort(p.effort)) throw new Error('Unknown effort'); bot.effort = p.effort; }
         if (p.permission !== undefined) {
           if (!isPermission(p.permission)) throw new Error('Unknown permission mode');
@@ -189,7 +204,8 @@ export class Host extends EventEmitter {
       case 'chat.send': {
         const text = String(p.text ?? '').trim();
         if (!text) throw new Error('Empty message');
-        if (!authStatus().signedIn) throw new Error('Not signed in to ChatGPT. Open Connect → Sign in with ChatGPT.');
+        const bot = this.bots.get(p.botId); if (!bot) throw new Error('Unknown bot');
+        if ((bot.provider || 'codex') === 'codex' && !authStatus().signedIn) throw new Error('Sign in to ChatGPT or select a compatible API in the bot menu.');
         this.runner(p.botId).submit(text, p.source || 'desktop');
         return { ok: true };
       }

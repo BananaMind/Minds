@@ -4,6 +4,8 @@ import { AppIcon } from './AppIcon.jsx';
 
 export function BotMenu({ bot, state, api, onClose, mobile = false }) {
   const [name, setName] = useState(bot.name);
+  const [model, setModel] = useState(bot.model);
+  const [error, setError] = useState('');
   const [confirm, setConfirm] = useState(false);
   const ref = useRef();
   useEffect(() => {
@@ -11,19 +13,28 @@ export function BotMenu({ bot, state, api, onClose, mobile = false }) {
     setTimeout(() => addEventListener('mousedown', f));
     return () => removeEventListener('mousedown', f);
   }, []);
-  const update = (patch) => api.call('bots.update', { id: bot.id, ...patch }).catch(() => {});
+  const update = (patch) => api.call('bots.update', { id: bot.id, ...patch }).catch(e => setError(e.message));
+  useEffect(() => setModel(bot.model), [bot.model]);
   const scheds = state.schedules.filter((s) => s.botId === bot.id);
   return (
     <div class="menu" ref={ref}>
       <label>Name</label>
       <input class="field" value={name} maxLength={40} onInput={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && name !== bot.name && update({ name })} onKeyDown={(e) => e.key === 'Enter' && e.target.blur()} />
+      <label>Provider</label>
+      <Select value={bot.provider || 'codex'} options={[{ value: 'codex', label: 'ChatGPT' }, { value: 'openai', label: 'Compatible API / local' }]} onChange={v => { const id = state.models.find(m => (m.provider || 'codex') === v)?.id; if (id) update({ provider: v, model: id }); else setError('Add a model in Profile & settings first.'); }} />
       <label>Model</label>
-      <Select value={bot.model} options={modelOptions(state.models)} onChange={(v) => update({ model: v })} />
+      {bot.provider === 'openai' ? <>
+        <input class="field" value={model} onInput={e => setModel(e.target.value)} onBlur={() => model.trim() && model !== bot.model && update({ model: model.trim() })} onKeyDown={e => e.key === 'Enter' && e.target.blur()} />
+        {(state.settings.openai?.models || []).length > 0 && <Select value={bot.model} options={modelOptions(state.models.filter(m => m.provider === 'openai'))} onChange={v => update({ model: v })} />}
+      </> : <Select value={bot.model} options={modelOptions(state.models.filter(m => !m.provider || m.provider === 'codex'))} onChange={v => update({ model: v })} />}
+      {error && <p class="error tiny">{error}</p>}
+      {bot.provider !== 'openai' && <>
       <label>Reasoning effort</label>
       <div class="seg">
         {state.efforts.map((e) => <button key={e} type="button" class={bot.effort === e ? 'on' : ''} onClick={() => update({ effort: e })}>{e}</button>)}
       </div>
+      </>}
       <label>Permissions</label>
       <div class="seg three">
         {state.permissions.map((m) => <button key={m.id} type="button" class={`perm-${m.id} ${bot.permission === m.id ? 'on' : ''}`} onClick={() => update({ permission: m.id })}>{m.id}</button>)}

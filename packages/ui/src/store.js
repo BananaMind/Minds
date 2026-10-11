@@ -68,7 +68,7 @@ export function useMinds(injectedApi) {
         case 'message.updated': dispatch({ type: 'msg.patch', botId: d.botId, id: d.id, patch: d.patch }); break;
         case 'message.delta': dispatch({ type: 'live', botId: d.botId, liveId: d.liveId, delta: d.delta }); break;
         case 'message.discard': dispatch({ type: 'live.clear', botId: d.botId }); break;
-        case 'settings.updated': dispatch({ type: 'settings', settings: d.settings }); break;
+        case 'settings.updated': dispatch({ type: 'settings', settings: d.settings }); loadState(); break;
         case 'auth.updated': dispatch({ type: 'auth', auth: d.auth }); break;
         case 'plugins.updated': loadPlugins(); break;
         case 'mobile.updated': dispatch({ type: 'mobile', mobile: d }); break;

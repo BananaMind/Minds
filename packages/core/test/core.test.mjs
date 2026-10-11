@@ -210,7 +210,7 @@ test('host: bots are isolated, per-bot model/effort, signed-out greeting', async
   assert.notEqual(host.bots.workspace(a.id), host.bots.workspace(b.id));
   const hist = await host.call('chat.history', { botId: a.id });
   assert.match(hist.items[0].text, /Connect your ChatGPT/);
-  await assert.rejects(host.call('chat.send', { botId: a.id, text: 'hi' }), /Not signed in/);
+  await assert.rejects(host.call('chat.send', { botId: a.id, text: 'hi' }), /Sign in to ChatGPT/);
   await host.call('bots.delete', { id: b.id });
   assert.equal(fs.existsSync(host.bots.dir(b.id)), false);
   assert.equal((await host.call('state')).bots.length, 1);

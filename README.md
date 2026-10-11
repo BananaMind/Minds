@@ -76,7 +76,7 @@ Create a bot with the **+** button. Each bot has its own name, animated avatar,
 chat history, memory, workspace, model, and permissions.
 
 - **Give it work.** Bots can run commands, read and edit files, schedule tasks,
-  and use the apps you connect.
+  search the web with DuckDuckGo Lite, fetch website text, and use the apps you connect.
 - **Change direction anytime.** Send another message while a bot is working.
   Its active tool finishes, then the bot handles your new message.
 - **See what happened.** Open **Tool calls** to inspect arguments, results, and

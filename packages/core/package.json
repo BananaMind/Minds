@@ -16,6 +16,7 @@
     "@modelcontextprotocol/sdk": "^1.32.1",
     "croner": "^10.0.1",
     "cross-spawn": "^7.0.6",
+    "linkedom": "^0.18.13",
     "node-datachannel": "^0.33.4",
     "ws": "^8.22.0"
   }

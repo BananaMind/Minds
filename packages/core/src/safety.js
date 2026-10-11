@@ -70,6 +70,7 @@ const insideWorkspace = (ctx, p) => { try { return inside(ctx.workspace, resolve
 
 /** Does this call change things (or reach outside the workspace)? Those are what "ask" mode asks about. */
 function actsOnWorld(ctx, tool, args) {
+  if (tool === 'web_search' || tool === 'fetch_website') return false;
   if (tool === 'ask_user_question') return false;
   if (tool === 'schedule') return args.action === 'create' || args.action === 'delete';
   if (tool === 'read_file') return !insideWorkspace(ctx, args.path);
@@ -77,6 +78,7 @@ function actsOnWorld(ctx, tool, args) {
 }
 
 function needsReview(ctx, tool, args) {
+  if (tool === 'web_search' || tool === 'fetch_website') return false;
   if (tool === 'ask_user_question') return false;
   if (tool === 'schedule') return args.action === 'create';
   if (tool === 'read_file') return !insideWorkspace(ctx, args.path);

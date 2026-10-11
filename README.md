@@ -26,6 +26,8 @@
 
 ---
 
+[**Watch the 32-second Minds promo →**](docs/assets/minds-promo.mp4)
+
 ### Installation
 
 Download the Linux AppImage from [GitHub Releases](https://github.com/BananaMind/Minds/releases).

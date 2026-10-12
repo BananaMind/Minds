@@ -1,4 +1,4 @@
-name: Linux release
+name: Release
 on:
   push:
     tags:
@@ -6,8 +6,27 @@ on:
 permissions:
   contents: write
 jobs:
-  appimage:
+  # The release exists before any build finishes, so every platform can attach its files to it.
+  release:
     runs-on: ubuntu-latest
+    steps:
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Minds $GITHUB_REF_NAME" --generate-notes --prerelease
+
+  desktop:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: linux, dir: release/linux, files: '*.AppImage', sums: SHA256SUMS.txt }
+          - { os: windows-latest, target: win, dir: release/windows, files: '*.exe', sums: SHA256SUMS-windows.txt }
+          - { os: macos-latest, target: mac, dir: release/macos, files: '*.dmg *.app.zip', sums: SHA256SUMS-macos.txt }
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,12 +35,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node node_modules/electron/install.js
-      - run: npm run desktop:linux
-      - name: Publish AppImage
+      - run: npm run desktop:${{ matrix.target }}
+      - name: Attach to release
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${GITHUB_REF_NAME}"
-          cd release/linux
-          sha256sum *.AppImage > SHA256SUMS.txt
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "Minds $tag" --generate-notes --prerelease ./*.AppImage SHA256SUMS.txt
+          cd "${{ matrix.dir }}"
+          # The macOS zip holds Minds.app; name it so that is clear on the release page.
+          for f in *.zip; do [ -e "$f" ] && [[ "$f" != *.app.zip ]] && mv "$f" "${f%.zip}.app.zip"; done
+          files=$(ls ${{ matrix.files }})
+          if command -v sha256sum >/dev/null; then sha256sum $files > "${{ matrix.sums }}"; else shasum -a 256 $files > "${{ matrix.sums }}"; fi
+          gh release upload "$GITHUB_REF_NAME" $files "${{ matrix.sums }}" --repo "$GITHUB_REPOSITORY" --clobber

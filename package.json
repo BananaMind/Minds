@@ -1,7 +1,7 @@
 {
   "name": "minds",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Minds \u2014 personal AI bots that live on your PC. Desktop GUI, CLI, and mobile remote.",
   "license": "MIT",
   "type": "module",

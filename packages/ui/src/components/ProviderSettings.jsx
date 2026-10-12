@@ -6,11 +6,12 @@ export function ProviderSettings({ state, api, dispatch }) {
   const [key, setKey] = useState('');
   const [models, setModels] = useState((saved.models || []).join('\n'));
   const [tools, setTools] = useState(saved.tools !== false);
+  const [images, setImages] = useState(saved.images === true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const ids = () => models.split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
   const save = async (makeDefault = false) => {
-    const patch = { openai: { baseUrl, models: ids(), tools, ...(key ? { apiKey: key } : {}) } };
+    const patch = { openai: { baseUrl, models: ids(), tools, images, ...(key ? { apiKey: key } : {}) } };
     if (makeDefault) {
       if (!ids().length) throw new Error('Enter at least one model ID first.');
       patch.defaultProvider = 'openai'; patch.defaultModel = ids()[0];
@@ -27,6 +28,7 @@ export function ProviderSettings({ state, api, dispatch }) {
       <label>API key (optional)</label><input class="field" type="password" value={key} onInput={e => setKey(e.target.value)} placeholder={saved.keySaved ? 'Saved — leave blank to keep' : 'Leave empty for a local server'} autoComplete="new-password" />
       <label>Model IDs</label><textarea class="field" style={{ height: '90px', padding: '8px 12px' }} value={models} onInput={e => setModels(e.target.value)} placeholder="One model ID per line, exactly as your server expects" />
       <label>Tools</label><label class="check"><input type="checkbox" checked={tools} onChange={e => setTools(e.target.checked)} /> Enable tool calling (requires a model that supports tools)</label>
+      <label>Images</label><label class="check"><input type="checkbox" checked={images} onChange={e => setImages(e.target.checked)} /> Model supports image input (lets bots see your screen)</label>
     </div>
     <div class="row">
       <button class="btn" disabled={busy} onClick={() => run(async () => { await save(); setMessage('Saved. Choose this provider in a bot’s menu.'); })}>Save</button>

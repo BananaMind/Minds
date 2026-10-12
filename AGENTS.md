@@ -13,11 +13,11 @@ Use Node.js 20+ and run these commands from the repository root:
 - `npm install`: install workspace dependencies.
 - `node node_modules/electron/install.js`: download Electron during initial setup.
 - `npm run ui:build`: build the shared UI into `packages/ui/dist/`.
-- `npm run dev -w @minds/ui`: start the Vite development server.
+- `npm run dev -w @bananamind/minds-ui`: start the Vite development server.
 - `npm run desktop`: build the UI and launch Electron.
 - `npm run daemon` / `npm run cli`: run the host or terminal client.
 - `npm test`: run core and P2P tests.
-- `npm run apk -w @minds/mobile`: sync the UI and build an Android debug APK; requires Java and the Android SDK.
+- `npm run apk -w @bananamind/minds-mobile`: sync the UI and build an Android debug APK; requires Java and the Android SDK.
 
 ## Coding Style & Naming Conventions
 

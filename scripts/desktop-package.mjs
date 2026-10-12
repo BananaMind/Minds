@@ -20,18 +20,20 @@ fs.rmSync(stage, { recursive: true, force: true });
 fs.mkdirSync(stage, { recursive: true });
 const copy = (source, destination) => fs.cpSync(path.join(root, source), path.join(stage, destination || source), { recursive: true, filter: (p) => !p.split(path.sep).some((part) => ['node_modules', 'test', '.git'].includes(part)) });
 copy('apps/desktop/main.mjs');
+copy('apps/desktop/app.mjs');
 copy('apps/desktop/preload.cjs');
 copy('apps/desktop/assets');
 copy('packages/core/src');
 copy('packages/core/bin');
+copy('packages/core/overlay');
 copy('packages/p2p/src');
 copy('packages/ui/dist');
 fs.copyFileSync(path.join(root, 'packages/p2p/package.json'), path.join(stage, 'packages/p2p/package.json'));
-fs.writeFileSync(path.join(stage, 'packages/core/package.json'), JSON.stringify({ ...core, dependencies: { ...core.dependencies, '@minds/p2p': 'file:../p2p' } }, null, 2));
+fs.writeFileSync(path.join(stage, 'packages/core/package.json'), JSON.stringify({ ...core, dependencies: { ...core.dependencies, '@bananamind/minds-p2p': 'file:../p2p' } }, null, 2));
 fs.writeFileSync(path.join(stage, 'package.json'), JSON.stringify({
   name: 'minds-desktop', version: pkg.version, description: pkg.description, author: 'Minds', private: true,
   type: 'module', main: 'apps/desktop/main.mjs',
-  dependencies: { '@minds/core': 'file:packages/core', '@minds/p2p': 'file:packages/p2p' },
+  dependencies: { '@bananamind/minds-core': 'file:packages/core', '@bananamind/minds-p2p': 'file:packages/p2p' },
 }, null, 2));
 
 const run = (command, args, cwd) => new Promise((resolve, reject) => {

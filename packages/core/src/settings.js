@@ -16,7 +16,7 @@ export function defaultSettings() {
     openrouterKey: '',
     defaultModel: DEFAULT_MODEL,
     defaultProvider: 'codex',
-    openai: { baseUrl: 'http://localhost:11434/v1', apiKey: '', models: [], tools: true },
+    openai: { baseUrl: 'http://localhost:11434/v1', apiKey: '', models: [], tools: true, images: false },
     defaultEffort: DEFAULT_EFFORT,
     defaultPermission: DEFAULT_PERMISSION, // permission mode for bots that haven't picked one
     autoSendTranscript: true,

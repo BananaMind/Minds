@@ -1,12 +1,18 @@
 {
-  "name": "@minds/mobile",
+  "name": "@bananamind/minds-mobile",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "npm run build -w @minds/ui --prefix ../.. && cap sync android",
+    "sync": "npm run build -w @bananamind/minds-ui --prefix ../.. && cap sync android",
     "apk": "npm run sync && cd android && ./gradlew assembleDebug"
   },
-  "dependencies": { "@capacitor/android": "^8.5.3", "@capacitor/core": "^8.5.3" },
-  "devDependencies": { "@capacitor/cli": "^8.5.3" }
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
 }

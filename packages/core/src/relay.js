@@ -1,4 +1,4 @@
-import { ICE_SERVERS, normalizeIceServers, hasTurn } from '@minds/p2p';
+import { ICE_SERVERS, normalizeIceServers, hasTurn } from '@bananamind/minds-p2p';
 
 export function normalizeRelay(input, previous = {}) {
   const provider = input?.provider || 'none';

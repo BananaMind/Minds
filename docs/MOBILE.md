@@ -51,7 +51,7 @@ phone (Capacitor app)  <—— WebRTC data channel (DTLS) ——>  PC host (mind
 |---|---|
 | chat with bots, answer questions, approve/decline actions* | change settings, see or set API keys, sign in/out |
 | read tool-call logs, search | shut down the host, pair or revoke phones |
-| create bots, rename, change model/effort | delete bots |
+| create bots, rename, change model/effort/speed | delete bots |
 | switch a bot between *default* and *ask* | switch a bot to **bypass permissions**, or create a bypass bot |
 | use the mic (transcribed on the PC with your OpenRouter key) | read files or run commands directly (only through a bot) |
 

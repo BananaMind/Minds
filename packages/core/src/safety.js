@@ -54,6 +54,10 @@ export function heuristic(ctx, tool, args) {
       if (encoded) cmd += `\n${Buffer.from(encoded[1], 'base64').toString('utf16le')}`;
       if (touchesSecret(cmd)) return { hard: true, reason: 'Command touches credential or key files.' };
       for (const [re, why] of DANGEROUS_CMD) if (re.test(cmd)) return { hard: false, reason: `Command ${why}.` };
+    } else if (tool === 'computer' && args.action === 'type') {
+      const text = String(args.text || '').replaceAll('~', home);
+      if (touchesSecret(text)) return { hard: true, reason: 'Types a command that touches credential or key files.' };
+      for (const [re, why] of DANGEROUS_CMD) if (re.test(text)) return { hard: false, reason: `Typed text looks like a risky command (${why}).` };
     } else if (tool === 'read_file') {
       const f = resolvePath(ctx, args.path);
       if (touchesSecret(f)) return { hard: true, reason: 'Reads a credential or key file.' };
@@ -70,7 +74,8 @@ const insideWorkspace = (ctx, p) => { try { return inside(ctx.workspace, resolve
 
 /** Does this call change things (or reach outside the workspace)? Those are what "ask" mode asks about. */
 function actsOnWorld(ctx, tool, args) {
-  if (tool === 'web_search' || tool === 'fetch_website') return false;
+  if (tool === 'web_search' || tool === 'fetch_website' || tool === 'view_screen') return false;
+  if (tool === 'computer') return !['screenshot', 'wait'].includes(args.action);
   if (tool === 'ask_user_question') return false;
   if (tool === 'schedule') return args.action === 'create' || args.action === 'delete';
   if (tool === 'read_file') return !insideWorkspace(ctx, args.path);
@@ -78,7 +83,8 @@ function actsOnWorld(ctx, tool, args) {
 }
 
 function needsReview(ctx, tool, args) {
-  if (tool === 'web_search' || tool === 'fetch_website') return false;
+  if (tool === 'web_search' || tool === 'fetch_website' || tool === 'view_screen') return false;
+  if (tool === 'computer') return args.action === 'type'; // typed text may be a shell command
   if (tool === 'ask_user_question') return false;
   if (tool === 'schedule') return args.action === 'create';
   if (tool === 'read_file') return !insideWorkspace(ctx, args.path);

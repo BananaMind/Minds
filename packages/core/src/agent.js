@@ -4,10 +4,20 @@ import { clip } from './tools/util.js';
 import { review } from './safety.js';
 import { systemPrompt } from './prompt.js';
 import { newId } from './store.js';
+import { imageUrl } from './images.js';
+import { markUnsupported, speedSupported } from './catalog.js';
 
 const MAX_STEPS = 60;
 const INPUT_CHAR_BUDGET = 500_000;
 const KEEP_FULL_TOOL_OUTPUTS = 12;
+const KEEP_IMAGES = 3; // newest messages/screenshots whose images are sent
+const IMAGE_CHARS = 4000;
+
+/** A bot's speed mode; bots saved before speeds existed may only have `fast: true`. */
+export const botSpeed = (bot) => (['fast', 'ultrafast'].includes(bot.speed) ? bot.speed : bot.fast ? 'fast' : 'normal');
+
+/** Can this bot's model take image input? Compatible APIs only when the user says so. */
+export const supportsImages = (bot, settings) => (bot.provider || 'codex') !== 'openai' || settings.openai?.images === true;
 
 const stamp = (ts) => {
   const d = new Date(ts);
@@ -16,11 +26,18 @@ const stamp = (ts) => {
 };
 
 /** Rebuild model input (Responses-API items) from the chat log, as groups so pairs never split. */
-export function buildInput(items) {
+export function buildInput(items, { images = true } = {}) {
   const groups = [];
   const toolIdxs = [];
+  // Only the newest images are sent; older ones are just noted in text.
+  const shown = new Set(images ? items.filter((it) => (it.type === 'tool' && it.image) || (it.type === 'user' && it.images?.length)).slice(-KEEP_IMAGES) : []);
   for (const it of items) {
-    if (it.type === 'user') groups.push({ chars: it.text.length, items: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: `[${stamp(it.ts)}] ${it.text}` }] }] });
+    if (it.type === 'user') {
+      const urls = shown.has(it) ? it.images.map((img) => imageUrl(img.path)).filter(Boolean) : [];
+      const missing = (it.images?.length || 0) - urls.length;
+      const text = `[${stamp(it.ts)}] ${it.text}${missing ? `\n[${missing} attached image${missing > 1 ? 's' : ''} no longer shown]` : ''}`;
+      groups.push({ chars: text.length + urls.length * IMAGE_CHARS, items: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text }, ...urls.map((url) => ({ type: 'input_image', image_url: url }))] }] });
+    }
     else if (it.type === 'assistant' && it.text) groups.push({ chars: it.text.length, items: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: it.text }] }] });
     else if (it.type === 'tool') {
       const out = it.status === 'running' ? '[interrupted: host restarted or turn stopped]' : (it.result ?? '');
@@ -29,6 +46,8 @@ export function buildInput(items) {
         { type: 'function_call', call_id: it.callId, name: it.name, arguments: JSON.stringify(it.args ?? {}) },
         { type: 'function_call_output', call_id: it.callId, output: out },
       ] });
+      const url = shown.has(it) && imageUrl(it.image);
+      if (url) groups.push({ chars: IMAGE_CHARS, items: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: `[Screenshot from ${it.name}]` }, { type: 'input_image', image_url: url }] }] });
     }
   }
   // Older tool outputs shrink to keep the context bounded.
@@ -127,15 +146,18 @@ export class BotRunner {
     for (let step = 0; step < MAX_STEPS; step++) {
       checkpoint();
       const settings = host.settings.get();
-      const instructions = systemPrompt({ bot, userName: settings.userName, botDir: host.bots.dir(bot.id), workspace: host.bots.workspace(bot.id), apps: host.plugins.promptSection(bot) });
+      const images = supportsImages(bot, settings);
+      const instructions = systemPrompt({ bot, userName: settings.userName, botDir: host.bots.dir(bot.id), workspace: host.bots.workspace(bot.id), apps: host.plugins.promptSection(bot), images });
       const pluginTools = await host.plugins.toolsFor(bot);
+      // A speed ChatGPT already refused for this model runs at normal speed.
+      const speed = speedSupported(bot.model, botSpeed(bot)) ? botSpeed(bot) : 'normal';
       checkpoint();
       const seen = this.log.items.length;
       const liveId = newId('m_');
       let live = '';
       const res = await this.request({
-        model: bot.model, effort: bot.effort, instructions, provider: bot.provider || 'codex', config: settings.openai,
-        input: buildInput(this.log.items), tools: [...TOOLS, ...pluginTools], signal, cacheKey: bot.id,
+        model: bot.model, effort: bot.effort, speed, instructions, provider: bot.provider || 'codex', config: settings.openai,
+        input: buildInput(this.log.items, { images }), tools: [...TOOLS.filter((t) => images || !t.image), ...pluginTools], signal, cacheKey: bot.id,
         onText: (d) => { live += d; host.emit('message.delta', { botId: bot.id, liveId, delta: d }); },
       }).catch((e) => { host.emit('message.discard', { botId: bot.id, liveId }); throw e; });
       if (signal.aborted || this.restartRequested) {
@@ -143,6 +165,11 @@ export class BotRunner {
         checkpoint();
       }
 
+      if (res.speedUnavailable) markUnsupported(bot.model, res.speedUnavailable);
+      if (res.speedUnavailable && this.speedNotice !== `${bot.model}:${res.speedUnavailable}`) {
+        this.speedNotice = `${bot.model}:${res.speedUnavailable}`;
+        this.add({ type: 'notice', text: `${res.speedUnavailable === 'ultrafast' ? 'Ultrafast' : 'Fast'} mode isn't available for ${bot.model}; running at normal speed.` });
+      }
       if (process.env.MINDS_DEBUG) console.error(`[debug] ${bot.name} step ${step}: text=${JSON.stringify(res.text.slice(0, 80))} tools=${res.toolCalls.map((t) => t.name)}`);
       const hasTools = res.toolCalls.length > 0;
       if (res.text.trim()) {
@@ -201,7 +228,8 @@ export class BotRunner {
       }
       if (this.restartRequested || signal.aborted) return finish('denied', '[superseded or stopped before execution]');
       const out = await tool.run(ctx, args);
-      finish('ok', typeof out === 'string' ? out : JSON.stringify(out));
+      if (out?.image) finish('ok', out.text, { image: out.image });
+      else finish('ok', typeof out === 'string' ? out : JSON.stringify(out));
     } catch (e) {
       if (signal.aborted) { finish('error', '[stopped by user]'); throw Object.assign(new Error('aborted'), { name: 'AbortError' }); }
       finish('error', `Error: ${e?.message || e}`);

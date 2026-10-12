@@ -29,12 +29,6 @@ export function BotMenu({ bot, state, api, onClose, mobile = false }) {
         {(state.settings.openai?.models || []).length > 0 && <Select value={bot.model} options={modelOptions(state.models.filter(m => m.provider === 'openai'))} onChange={v => update({ model: v })} />}
       </> : <Select value={bot.model} options={modelOptions(state.models.filter(m => !m.provider || m.provider === 'codex'))} onChange={v => update({ model: v })} />}
       {error && <p class="error tiny">{error}</p>}
-      {bot.provider !== 'openai' && <>
-      <label>Reasoning effort</label>
-      <div class="seg">
-        {state.efforts.map((e) => <button key={e} type="button" class={bot.effort === e ? 'on' : ''} onClick={() => update({ effort: e })}>{e}</button>)}
-      </div>
-      </>}
       <label>Permissions</label>
       <div class="seg three">
         {state.permissions.map((m) => <button key={m.id} type="button" class={`perm-${m.id} ${bot.permission === m.id ? 'on' : ''}`} onClick={() => update({ permission: m.id })}>{m.id}</button>)}

@@ -1,8 +1,31 @@
 {
-  "name": "@minds/p2p",
+  "name": "@bananamind/minds-p2p",
   "version": "0.1.0",
-  "type": "module",
   "description": "Serverless-ish P2P for Minds: WebRTC data channels, E2E-authenticated pairing, signaling through public WebTorrent trackers (encrypted)",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "webrtc",
+    "p2p",
+    "pairing",
+    "minds"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BananaMind/Minds.git",
+    "directory": "packages/p2p"
+  },
+  "homepage": "https://github.com/BananaMind/Minds#readme",
+  "bugs": "https://github.com/BananaMind/Minds/issues",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./client": "./src/client.js",

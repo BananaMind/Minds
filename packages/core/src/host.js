@@ -3,15 +3,18 @@ import fs from 'node:fs';
 import { MINDS_HOME } from './paths.js';
 import { Settings } from './settings.js';
 import { BotStore } from './bots.js';
-import { BotRunner } from './agent.js';
+import { BotRunner, supportsImages, botSpeed } from './agent.js';
+import { saveImages } from './images.js';
 import { Scheduler } from './scheduler.js';
 import { listModels, validModel } from './providers/openai.js';
 import { authStatus, startLogin } from './codex-auth.js';
+import { getUsage, getResets, redeemReset } from './usage.js';
+import { unsupportedSpeeds, speedSupported } from './catalog.js';
 import { transcribe } from './openrouter.js';
 import { MODELS, EFFORTS, isModel, isEffort, OPENROUTER_TRANSCRIBE_MODEL, OPENROUTER_SAFETY_MODEL } from './models.js';
 import { TOOLS } from './tools/index.js';
 import { PERMISSION_MODES, isPermission } from './permissions.js';
-import { recentLog } from '@minds/p2p';
+import { recentLog } from '@bananamind/minds-p2p';
 import { PluginManager } from './plugins/manager.js';
 
 const VISIBLE = (i) => (i.type === 'assistant' && !i.interim && i.text) || i.type === 'question' || i.type === 'approval' || (i.type === 'user' && !i.hidden) || i.type === 'notice';
@@ -66,12 +69,12 @@ export class Host extends EventEmitter {
     for (let i = log.items.length - 1; i >= 0; i--) {
       const it = log.items[i];
       if (!VISIBLE(it)) continue;
-      if (!last) last = { type: it.type, text: it.type === 'question' ? it.question : it.type === 'approval' ? `Approval needed: ${it.summary}` : it.text, ts: it.ts };
+      if (!last) last = { type: it.type, text: it.type === 'question' ? it.question : it.type === 'approval' ? `Approval needed: ${it.summary}` : it.text || (it.images?.length ? 'Image' : ''), ts: it.ts };
       if (it.ts <= (bot.lastReadTs || 0)) break;
       if (it.type === 'assistant' || (it.type === 'question' && it.status === 'pending') || (it.type === 'approval' && it.status === 'pending')) unread++;
     }
     return {
-      id: bot.id, name: bot.name, icon: bot.icon, model: bot.model, provider: bot.provider || 'codex', effort: bot.effort,
+      id: bot.id, name: bot.name, icon: bot.icon, model: bot.model, provider: bot.provider || 'codex', effort: bot.effort, speed: botSpeed(bot),
       permission: bot.permission || this.settings.get().defaultPermission,
       plugins: bot.plugins || [],
       createdAt: bot.createdAt, lastActivity: bot.lastActivity,
@@ -146,6 +149,13 @@ export class Host extends EventEmitter {
         return { models: await listModels(this.settings.get().openai) };
       }
       case 'auth.status': return authStatus();
+      case 'models.speeds': return { unsupported: unsupportedSpeeds() };
+      case 'usage.get': case 'usage.resets': case 'usage.redeem': {
+        if (!authStatus().signedIn) throw new Error('Sign in to ChatGPT to see plan usage.');
+        if (method === 'usage.get') return getUsage();
+        if (method === 'usage.resets') return getResets();
+        return redeemReset(p.creditId);
+      }
       case 'auth.login': {
         startLogin().then((auth) => this.emit('auth.updated', { auth }));
         return { started: true };
@@ -179,6 +189,14 @@ export class Host extends EventEmitter {
         if (!(provider === 'openai' ? validModel(model) : isModel(model))) throw new Error('Unknown model. Choose a valid model ID.');
         bot.model = model; bot.provider = provider;
         if (p.effort !== undefined) { if (!isEffort(p.effort)) throw new Error('Unknown effort'); bot.effort = p.effort; }
+        if (p.fast !== undefined) p.speed ??= p.fast ? 'fast' : 'normal';
+        if (p.speed !== undefined) {
+          if (!['normal', 'fast', 'ultrafast'].includes(p.speed)) throw new Error('Unknown speed. Use normal, fast or ultrafast.');
+          if (provider === 'codex' && !speedSupported(bot.model, p.speed)) throw new Error(`${p.speed === 'ultrafast' ? 'UltraFast' : 'Fast'} isn't available for ${bot.model}.`);
+          bot.speed = p.speed; delete bot.fast;
+        } else if (p.model !== undefined && provider === 'codex' && !speedSupported(bot.model, botSpeed(bot))) {
+          bot.speed = 'normal'; delete bot.fast; // new model lacks the old speed
+        }
         if (p.permission !== undefined) {
           if (!isPermission(p.permission)) throw new Error('Unknown permission mode');
           if (remote && p.permission === 'bypass') throw new Error('Bypass permissions can only be turned on from the computer.');
@@ -203,10 +221,12 @@ export class Host extends EventEmitter {
       }
       case 'chat.send': {
         const text = String(p.text ?? '').trim();
-        if (!text) throw new Error('Empty message');
+        if (!text && !p.images?.length) throw new Error('Empty message');
         const bot = this.bots.get(p.botId); if (!bot) throw new Error('Unknown bot');
         if ((bot.provider || 'codex') === 'codex' && !authStatus().signedIn) throw new Error('Sign in to ChatGPT or select a compatible API in the bot menu.');
-        this.runner(p.botId).submit(text, p.source || 'desktop');
+        if (p.images?.length && !supportsImages(bot, this.settings.get())) throw new Error('This bot’s model can’t see images. Turn on image input for your compatible API in Settings, or pick another model.');
+        const images = saveImages(this.bots.dir(bot.id), p.images);
+        this.runner(p.botId).submit(text, p.source || 'desktop', images.length ? { images } : {});
         return { ok: true };
       }
       case 'chat.stop': this.runners.get(p.botId)?.stop(); return { ok: true };

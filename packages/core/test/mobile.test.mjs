@@ -11,10 +11,10 @@ process.env.MINDS_CODEX_AUTH = path.join(tmp, 'no-auth.json');
 const { Host } = await import('../src/host.js');
 const { LocalServer } = await import('../src/server.js');
 const { MobileManager } = await import('../src/mobile.js');
-const { PhoneClient, memoryStorage } = await import('@minds/p2p/client');
-const { startDevTracker } = await import('@minds/p2p/dev-tracker');
-const { encodePairing, decodePairing, nextMessage } = await import('@minds/p2p/protocol');
-const { Signaling, dial, pairRoom } = await import('@minds/p2p');
+const { PhoneClient, memoryStorage } = await import('@bananamind/minds-p2p/client');
+const { startDevTracker } = await import('@bananamind/minds-p2p/dev-tracker');
+const { encodePairing, decodePairing, nextMessage } = await import('@bananamind/minds-p2p/protocol');
+const { Signaling, dial, pairRoom } = await import('@bananamind/minds-p2p');
 const { RTCPeerConnection: RTC } = await import('node-datachannel/polyfill');
 
 const tracker = await startDevTracker();
@@ -150,7 +150,7 @@ test('only one phone can pair at a time', async () => {
 
 test('the pairing code is compact (easy to scan) and carries no keys or relay list', async () => {
   await host.call('mobile.pair.cancel');
-  const prev = mobile.trackers; mobile.trackers = (await import('@minds/p2p')).DEFAULT_TRACKERS;
+  const prev = mobile.trackers; mobile.trackers = (await import('@bananamind/minds-p2p')).DEFAULT_TRACKERS;
   const { payload } = await host.call('mobile.pair.start');
   mobile.trackers = prev;
   assert.ok(payload.length < 100, `payload is ${payload.length} chars`);

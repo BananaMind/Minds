@@ -2,7 +2,8 @@
   "name": "minds",
   "private": true,
   "version": "0.1.0",
-  "description": "Minds — personal AI bots that live on your PC. Desktop GUI, CLI, and mobile remote.",
+  "description": "Minds \u2014 personal AI bots that live on your PC. Desktop GUI, CLI, and mobile remote.",
+  "license": "MIT",
   "type": "module",
   "workspaces": [
     "packages/*",
@@ -11,8 +12,8 @@
   "scripts": {
     "daemon": "node packages/core/bin/mindsd.js",
     "cli": "node packages/cli/bin/minds.js",
-    "ui:build": "npm run build -w @minds/ui",
-    "desktop": "npm run ui:build && npm run start -w @minds/desktop",
+    "ui:build": "npm run build -w @bananamind/minds-ui",
+    "desktop": "npm run ui:build && npm run start -w @bananamind/minds-desktop",
     "desktop:win": "npm run ui:build && node scripts/desktop-package.mjs",
     "desktop:mac": "npm run ui:build && node scripts/desktop-package.mjs --mac",
     "desktop:linux": "npm run ui:build && node scripts/desktop-package.mjs --linux",

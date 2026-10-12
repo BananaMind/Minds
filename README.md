@@ -180,7 +180,7 @@ Minds is a JavaScript ES-module npm workspace.
 | `apps/mobile` | Capacitor Android shell |
 
 ```sh
-npm run dev -w @minds/ui   # UI development server
+npm run dev -w @bananamind/minds-ui   # UI development server
 npm run ui:build          # Build the shared UI
 npm run daemon            # Run the host
 npm test                  # Core and P2P tests
@@ -190,3 +190,7 @@ Use temporary `MINDS_HOME` and `MINDS_CODEX_AUTH` paths when testing changes
 against an isolated profile.
 
 </details>
+
+### License
+
+[MIT](LICENSE)

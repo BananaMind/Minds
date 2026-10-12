@@ -1,4 +1,4 @@
-import { ICON_COLORS } from '@minds/core';
+import { ICON_COLORS } from '@bananamind/minds-core';
 
 const on = process.stdout.isTTY && !process.env.NO_COLOR;
 const wrapSgr = (a, b) => (s) => (on ? `\x1b[${a}m${s}\x1b[${b}m` : String(s));

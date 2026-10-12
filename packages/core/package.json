@@ -1,7 +1,36 @@
 {
-  "name": "@minds/core",
-  "version": "0.1.0",
+  "name": "@bananamind/minds-core",
+  "version": "0.1.1",
+  "description": "Minds host: personal AI bots that live on your computer, with tools, schedules, computer use and a local RPC server.",
+  "license": "MIT",
   "type": "module",
+  "keywords": [
+    "ai",
+    "agent",
+    "bots",
+    "computer-use",
+    "codex",
+    "openai",
+    "minds"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BananaMind/Minds.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/BananaMind/Minds#readme",
+  "bugs": "https://github.com/BananaMind/Minds/issues",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src",
+    "bin",
+    "overlay"
+  ],
   "main": "src/index.js",
   "bin": {
     "mindsd": "bin/mindsd.js"
@@ -9,15 +38,26 @@
   "exports": {
     ".": "./src/index.js",
     "./client": "./src/client.js",
-    "./models": "./src/models.js"
+    "./models": "./src/models.js",
+    "./mindsd": "./bin/mindsd.js",
+    "./overlay": "./overlay/overlay.mjs"
   },
   "dependencies": {
-    "@minds/p2p": "*",
+    "@bananamind/minds-p2p": "^0.1.0",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "croner": "^10.0.1",
     "cross-spawn": "^7.0.6",
+    "dbus-next": "^0.10.2",
     "linkedom": "^0.18.13",
     "node-datachannel": "^0.33.4",
     "ws": "^8.22.0"
+  },
+  "peerDependencies": {
+    "electron": ">=38"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
   }
 }

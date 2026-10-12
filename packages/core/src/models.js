@@ -1,9 +1,9 @@
-// Model catalog. Efforts apply to every model; set per bot.
+// Model catalog. Efforts apply to every model; set per bot. `speeds`: the speed modes the model offers.
 export const MODELS = [
-  { id: 'gpt-6-astra', name: 'GPT-6 Astra', hint: 'Most capable' },
-  { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', hint: 'Latest balanced' },
-  { id: 'gpt-6-sol', name: 'GPT-6 Sol', hint: 'Balanced default' },
-  { id: 'gpt-6-luna', name: 'GPT-6 Luna', hint: 'Fast and light' },
+  { id: 'gpt-6-astra', name: 'GPT-6 Astra', hint: 'Most capable', speeds: ['normal', 'fast', 'ultrafast'] },
+  { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', hint: 'Latest balanced', speeds: ['normal', 'fast', 'ultrafast'] },
+  { id: 'gpt-6-sol', name: 'GPT-6 Sol', hint: 'Balanced default', speeds: ['normal', 'fast'] },
+  { id: 'gpt-6-luna', name: 'GPT-6 Luna', hint: 'Fast and light', speeds: ['normal', 'fast'] },
 ];
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 export const EFFORT_HINTS = {

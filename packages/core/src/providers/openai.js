@@ -9,7 +9,7 @@ export function normalizeConfig(input, previous = {}) {
   if (/[\r\n]/.test(apiKey)) throw new Error('Invalid API key.');
   const models = [...new Set((Array.isArray(input.models) ? input.models : String(input.models ?? previous.models?.join('\n') ?? '').split(/[\n,]+/)).map(x => String(x).trim()).filter(Boolean))];
   if (models.length > 200 || models.some(x => !validModel(x))) throw new Error('Use valid model IDs (one per line).');
-  return { baseUrl: url.href.replace(/\/$/, ''), apiKey, models, tools: input.tools === undefined ? previous.tools !== false : Boolean(input.tools) };
+  return { baseUrl: url.href.replace(/\/$/, ''), apiKey, models, tools: input.tools === undefined ? previous.tools !== false : Boolean(input.tools), images: input.images === undefined ? previous.images === true : Boolean(input.images) };
 }
 export const validModel = (id) => typeof id === 'string' && Boolean(id.trim()) && id.length <= 200 && !/[\x00-\x1f]/.test(id);
 const headers = (config) => ({ 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) });
@@ -29,7 +29,8 @@ export async function listModels(config) {
 export function chatMessages(instructions, input) {
   const messages = [{ role: 'system', content: instructions }];
   for (const item of input) {
-    if (item.type === 'message') messages.push({ role: item.role, content: item.content.map(x => x.text || '').join('\n') });
+    if (item.type === 'message' && item.content.some(x => x.type === 'input_image')) messages.push({ role: item.role, content: item.content.map(x => x.type === 'input_image' ? { type: 'image_url', image_url: { url: x.image_url } } : { type: 'text', text: x.text || '' }) });
+    else if (item.type === 'message') messages.push({ role: item.role, content: item.content.map(x => x.text || '').join('\n') });
     else if (item.type === 'function_call') messages.push({ role: 'assistant', content: null, tool_calls: [{ id: item.call_id, type: 'function', function: { name: item.name, arguments: item.arguments } }] });
     else if (item.type === 'function_call_output') messages.push({ role: 'tool', tool_call_id: item.call_id, content: String(item.output) });
   }

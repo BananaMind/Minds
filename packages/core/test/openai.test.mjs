@@ -9,7 +9,7 @@ process.env.MINDS_HOME = path.join(tmp, 'home');
 process.env.MINDS_CODEX_AUTH = path.join(tmp, 'no-auth.json');
 const { Host } = await import('../src/host.js');
 const { Settings } = await import('../src/settings.js');
-const { respond, normalizeConfig, listModels } = await import('../src/providers/openai.js');
+const { respond, normalizeConfig, listModels, chatMessages } = await import('../src/providers/openai.js');
 let handler;
 const server = http.createServer(async (req, res) => {
   const chunks = []; for await (const chunk of req) chunks.push(chunk);
@@ -30,6 +30,8 @@ test('compatible settings retain keys, redact secrets, normalize URLs and allow 
   assert.equal(JSON.stringify(settings.public()).includes('private'), false);
   assert.equal(normalizeConfig({ baseUrl: `${baseUrl}/chat/completions` }).baseUrl, baseUrl);
   assert.throws(() => normalizeConfig({ baseUrl: 'file:///tmp/test' }), /HTTP/);
+  assert.equal(normalizeConfig({ baseUrl }).images, false);
+  assert.equal(normalizeConfig({}, normalizeConfig({ baseUrl, images: true })).images, true);
   assert.throws(() => normalizeConfig({ baseUrl, apiKey: 'bad\nkey' }), /key/);
 });
 
@@ -85,4 +87,9 @@ test('model discovery and non-streaming JSON replies support authenticated serve
 test('truncated streams fail instead of executing incomplete tool calls', async () => {
   handler = (req, res) => { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.end(event({ choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'write_file', arguments: '{' } }] } }] })); };
   await assert.rejects(respond({ model: 'a', config: { baseUrl }, instructions: '', input: [], tools: [] }), /ended early/);
+});
+
+test('compatible API: screenshots become image_url content parts', () => {
+  const [, message] = chatMessages('sys', [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'look' }, { type: 'input_image', image_url: 'data:image/jpeg;base64,AA==' }] }]);
+  assert.deepEqual(message.content, [{ type: 'text', text: 'look' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AA==' } }]);
 });

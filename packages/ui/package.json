@@ -1,6 +1,7 @@
 {
-  "name": "@minds/ui",
+  "name": "@bananamind/minds-ui",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +14,7 @@
     "dompurify": "^3.2.6",
     "qrcode": "^1.5.4",
     "jsqr": "^1.4.0",
-    "@minds/p2p": "*"
+    "@bananamind/minds-p2p": "*"
   },
   "devDependencies": {
     "vite": "^7.0.0",

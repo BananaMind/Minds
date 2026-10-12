@@ -1,7 +1,8 @@
 import fs from 'node:fs';
-import { nextPermission, EFFORT_HINTS, MODEL_DESCRIPTIONS } from '@minds/core';
+import { nextPermission, EFFORT_HINTS, MODEL_DESCRIPTIONS } from '@bananamind/minds-core';
 import { c, glyph, md, stampLabel, botLine, clipLine, termWidth, wrap } from './render.js';
 import { Prompt } from './prompt.js';
+import { usageLines, dateLabel } from './usage.js';
 
 const VERSION = (() => { try { return JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url))).version; } catch { return '0.1.0'; } })();
 const MODE_COLOR = { default: '#3ecfa5', ask: '#f5c04a', bypass: '#ff7a73' };
@@ -10,6 +11,8 @@ const LETTERS = 'ABCDEFGH';
 const COMMANDS = [
   { name: 'model', desc: 'choose what model and reasoning effort to use' },
   { name: 'effort', desc: 'choose how much the bot reasons' },
+  { name: 'fast', desc: 'toggle Fast mode: faster replies, uses more of your limits' },
+  { name: 'ultrafast', desc: 'toggle Ultrafast: very fast writing, but often a long wait first' },
   { name: 'mode', desc: 'choose a permission mode (or press shift+tab)' },
   { name: 'bots', desc: 'switch to another bot' },
   { name: 'new', desc: 'create a new bot', needsArg: true },
@@ -17,6 +20,8 @@ const COMMANDS = [
   { name: 'tools', desc: 'see every tool call (/tools <n> for details)' },
   { name: 'verbose', desc: 'toggle live tool-call lines' },
   { name: 'schedules', desc: "list this bot's schedules" },
+  { name: 'usage', desc: 'show your ChatGPT 5-hour and weekly usage' },
+  { name: 'reset', desc: 'see and use your free rate-limit resets' },
   { name: 'stop', desc: 'stop the current task' },
   { name: 'skip', desc: 'dismiss the pending question' },
   { name: 'delete', desc: 'delete this bot and its history' },
@@ -44,7 +49,7 @@ export async function runChat(client, initialBot) {
         label: p ? '?' : '›',
         placeholder: p ? (p.type === 'approval' ? 'y to allow once, n to decline' : 'Type your answer') : `Message ${bot.name}`,
         working: status !== 'idle' && !p ? `${SPIN[frame % SPIN.length]} Working… (esc to stop)` : null,
-        status: `${c.rgb('#b9e6a8', `${modelName()} ${bot.effort}`)}${c.gray(' · ')}${glyph(bot.icon)} ${c.gray(bot.name)}${c.gray(' · ')}${c.rgb(MODE_COLOR[mode.id], `● ${mode.label}`)} ${c.gray('(shift+tab to cycle)')}`,
+        status: `${c.rgb('#b9e6a8', `${modelName()} ${bot.effort}`)}${bot.speed === 'fast' ? c.rgb('#f5c04a', ' ⚡fast') : bot.speed === 'ultrafast' ? c.rgb('#ff8a3d', ' ⚡⚡ultrafast') : ''}${c.gray(' · ')}${glyph(bot.icon)} ${c.gray(bot.name)}${c.gray(' · ')}${c.rgb(MODE_COLOR[mode.id], `● ${mode.label}`)} ${c.gray('(shift+tab to cycle)')}`,
         hint: p ? (p.type === 'question' ? '/skip to dismiss' : 'the bot is waiting for your decision') : '/ for commands · /tools for tool calls · /bots to switch',
       };
     },
@@ -234,6 +239,34 @@ export async function runChat(client, initialBot) {
     refreshPrompt();
   }
 
+  async function showUsage() {
+    out(c.gray('  Checking usage…'));
+    block(usageLines(await client.call('usage.get')));
+  }
+
+  /** Every reset credit is its own entry; only available ones can be picked, and each use is confirmed. */
+  async function pickReset() {
+    out(c.gray('  Checking resets…'));
+    const { credits } = await client.call('usage.resets');
+    const usable = credits.filter((x) => x.redeemable);
+    const others = credits.filter((x) => !x.redeemable);
+    if (others.length) block(['', c.bold('Other resets'), ...others.map((x) => `  ${c.gray('○')} ${x.title}  ${c.gray(`${x.redeemedAt ? `used ${dateLabel(x.redeemedAt)}` : x.supported ? x.status : 'not supported by your plan'}`)}`)]);
+    if (!usable.length) return out(c.gray('  No resets available right now.'));
+    const id = await prompt.select({
+      title: `Use a rate-limit reset (${usable.length} available)`, hint: 'enter to choose · esc to cancel',
+      items: usable.map((x) => ({ label: x.title, desc: `expires ${dateLabel(x.expiresAt)} · granted ${dateLabel(x.grantedAt)}${x.description ? ` · ${x.description}` : ''}`, value: x.id })),
+    });
+    if (!id) return;
+    const credit = usable.find((x) => x.id === id);
+    const u = await client.call('usage.get').catch(() => null);
+    const now = u?.windows.map((w) => `${w.label.toLowerCase()} ${w.usedPercent}%`).join(', ');
+    out(c.yellow(`  Use "${credit.title}" now?${now ? ` You're at ${now}.` : ''} This can't be undone. Type y to confirm.`));
+    if (!/^y/i.test((await prompt.ask('?')).trim())) return out(c.gray('  Kept your reset.'));
+    const { usage } = await client.call('usage.redeem', { creditId: id });
+    out(c.green(`  ✓ Reset used.`));
+    if (usage) block(usageLines(usage));
+  }
+
   async function command(line) {
     const [cmd, ...rest] = line.slice(1).split(/\s+/);
     const arg = rest.join(' ').trim();
@@ -276,6 +309,17 @@ export async function runChat(client, initialBot) {
         if (!schedules.length) return out(c.gray('  No schedules. Ask the bot to schedule something.'));
         return block(['', ...schedules.map((s) => `  ${s.enabled ? c.green('●') : c.gray('○')} ${c.bold(s.name)}  ${c.gray(s.kind === 'cron' ? s.cron : s.kind === 'interval' ? `every ${s.everyMinutes}m` : s.at)}  ${c.gray(`next ${s.nextRun ? new Date(s.nextRun).toLocaleString() : '—'}`)}  ${c.gray(s.id)}`), '']);
       }
+      case 'fast': case 'ultrafast': {
+        if ((bot.provider || 'codex') !== 'codex') return out(c.gray('  Speed modes are only for ChatGPT models.'));
+        const on = arg ? /^(on|1|true|yes)$/i.test(arg) : bot.speed !== cmd;
+        bot = { ...bot, ...(await client.call('bots.update', { id: bot.id, speed: on ? cmd : 'normal' })) }; refreshPrompt();
+        if (!on) return out(c.gray(`  ${cmd === 'fast' ? 'Fast' : 'Ultrafast'} mode off · normal speed`));
+        return out(cmd === 'fast'
+          ? `  ${c.rgb('#f5c04a', '⚡ Fast mode on')} ${c.gray('· faster replies (about 1.5–2x), uses more of your 5-hour and weekly limits')}`
+          : `  ${c.rgb('#ff8a3d', '⚡⚡ Ultrafast mode on')} ${c.gray('· text arrives several times faster, but replies can wait 10s+ to start; uses more of your limits')}`);
+      }
+      case 'usage': return showUsage();
+      case 'reset': case 'resets': return pickReset();
       case 'stop': await client.call('chat.stop', { botId: bot.id }); return;
       case 'skip': {
         const p = pending(); if (!p || p.type !== 'question') return out(c.gray('  Nothing to skip.'));

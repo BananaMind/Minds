@@ -73,7 +73,10 @@ export function Chat({ bot, state, api, dispatch, toolsOpen, onTools, onMenu }) 
 function Message({ m, bot, api }) {
   if (m.type === 'user') {
     if (m.source === 'schedule') return <div class="chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>Scheduled: {m.scheduleName || 'task'}</div>;
-    return <div class="msg me"><div class="bubble">{m.text}</div></div>;
+    return <div class="msg me"><div class="bubble">
+      {m.images?.length > 0 && <div class={`msg-images${m.text ? '' : ' only'}`}>{m.images.map((img, i) => img.thumb ? <img key={i} src={img.thumb} alt="Attached image" /> : <span key={i} class="img-missing">Image</span>)}</div>}
+      {m.text}
+    </div></div>;
   }
   if (m.type === 'assistant') return <div class="msg bot"><div class="bubble"><Markdown text={m.text} /></div></div>;
   if (m.type === 'question') return <div class="msg bot wide"><QuestionCard q={m} bot={bot} api={api} /></div>;

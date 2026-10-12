@@ -38,7 +38,11 @@ async function* sse(body, signal) {
  * One model request. `input` is Responses-API items. Returns {text, toolCalls, usage}.
  * onText(delta) is called for streaming assistant text.
  */
-export async function respond({ model, effort, instructions, input, tools, signal, onText, cacheKey }) {
+// Speed modes -> the service tier Codex sends ("Fast" is priority; "Ultrafast" exists on some models).
+export const SPEEDS = { normal: null, fast: 'priority', ultrafast: 'ultrafast' };
+
+export async function respond({ model, effort, speed = 'normal', instructions, input, tools, signal, onText, cacheKey }) {
+  const tier = SPEEDS[speed] ?? null;
   const payload = {
     model,
     instructions,
@@ -51,6 +55,7 @@ export async function respond({ model, effort, instructions, input, tools, signa
     reasoning: { effort, summary: 'auto' },
     text: { verbosity: 'medium' },
     ...(cacheKey ? { prompt_cache_key: cacheKey } : {}),
+    ...(tier ? { service_tier: tier } : {}),
   };
 
   let res;
@@ -82,13 +87,17 @@ export async function respond({ model, effort, instructions, input, tools, signa
   }
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    // Not every model offers every speed tier: run this request at normal speed instead of failing the turn.
+    if (tier && res.status === 400 && /service.?tier/i.test(text)) {
+      return { ...(await respond({ model, effort, instructions, input, tools, signal, onText, cacheKey })), speedUnavailable: speed };
+    }
     throw new Error(`Model request failed (HTTP ${res.status}): ${text.slice(0, 600)}`);
   }
 
   let text = '';
   const toolCalls = [];
   const open = new Map(); // item_id -> call being assembled
-  let usage = null;
+  let usage = null, servedTier = null;
 
   for await (const { event, data } of sse(res.body, signal)) {
     let d; try { d = JSON.parse(data); } catch { continue; }
@@ -109,12 +118,12 @@ export async function respond({ model, effort, instructions, input, tools, signa
         }
         break;
       case 'response.completed':
-        usage = d.response?.usage || null; break;
+        usage = d.response?.usage || null; servedTier = d.response?.service_tier || null; break;
       case 'response.failed':
         throw new Error(d.response?.error?.message || 'Model response failed');
       case 'error':
         throw new Error(d.message || d.error?.message || 'Model stream error');
     }
   }
-  return { text, toolCalls, usage };
+  return { text, toolCalls, usage, tier: servedTier };
 }

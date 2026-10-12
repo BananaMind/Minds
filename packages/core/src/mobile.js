@@ -5,8 +5,8 @@ import {
   Signaling, listen, gathered, DEFAULT_TRACKERS,
   newIdentity, exportIdentityJwk, importIdentityJwk, exportPub, importSignPub, importDhPub, dhBits, signMsg, verifyMsg,
   fingerprint, pairRoom, deviceRoom, b64u, unb64u, rand, equal, dbg,
-} from '@minds/p2p';
-import { encodePairing, nextMessage, sendJson, authMsg, readyMsg, pairedMsg, pairProof, VERSION } from '@minds/p2p/protocol';
+} from '@bananamind/minds-p2p';
+import { encodePairing, nextMessage, sendJson, authMsg, readyMsg, pairedMsg, pairProof, VERSION } from '@bananamind/minds-p2p/protocol';
 import { identityFile, devicesFile } from './paths.js';
 import { readJson, writeJson, newId } from './store.js';
 import { RelayManager } from './relay.js';

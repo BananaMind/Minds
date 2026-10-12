@@ -177,6 +177,7 @@ input, textarea, select { font: inherit; color: inherit; }
 .cbtn { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #cfcfcf; transition: background .12s; }
 .cbtn svg { width: 20px; height: 20px; }
 .cbtn.plus { background: #3a3a3a; } .cbtn.plus:hover { background: #484848; }
+.cbtn.img:hover { background: #333; }
 .cbtn.mic:hover:not(:disabled) { background: #333; }
 .cbtn.mic.off { opacity: .45; }
 .cbtn.mic.live { background: var(--bad); color: #fff; }
@@ -184,7 +185,63 @@ input, textarea, select { font: inherit; color: inherit; }
 .cbtn.send:disabled { background: #3a3a3a; color: #777; }
 .cbtn.send.stop { background: #e8e8e8; }
 .cbtn.send.stop svg { fill: currentColor; }
+.attachments { max-width: 860px; margin: 0 auto 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+.attachment { position: relative; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; border: 1px solid #333; background: #111; }
+.attachment img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.attachment button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.7); color: #fff; }
+.attachment button svg { width: 12px; height: 12px; stroke-width: 2.4; }
+.msg-images { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.msg-images.only { margin-bottom: 0; }
+.msg-images img { max-width: 220px; max-height: 220px; border-radius: 10px; display: block; }
+.img-missing { padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.25); font-size: 12px; }
 .toast { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%); background: #3b1f1f; color: #ffb4b0; padding: 8px 16px; border-radius: 12px; font-size: 13px; max-width: 80%; }
+
+/* effort + speed control (next to the mic) */
+.effort { position: relative; flex: none; align-self: center; }
+.effort-pill { height: 32px; display: flex; align-items: center; gap: 5px; padding: 0 11px 0 9px; border-radius: 999px; color: #cfcfcf; font-size: 13px; transition: background .12s; }
+.effort-pill:hover, .effort-pill.open { background: #333; }
+.effort-pill svg { width: 15px; height: 15px; fill: currentColor; stroke: none; color: #77777c; }
+.effort-pill.speed-fast svg { color: #f5c04a; }
+.effort-pill.speed-ultrafast svg { color: #c084fc; animation: ultra-glow 1.6s ease-in-out infinite; }
+.effort-pop { position: absolute; right: -6px; bottom: calc(100% + 16px); width: 330px; max-width: calc(100vw - 32px); padding: 12px 14px 16px; border-radius: 20px;
+  background: #1c1c1f; border: 1px solid #333; box-shadow: 0 18px 50px rgba(0,0,0,.6); z-index: 30; --ep: var(--accent); }
+.effort-pop.view-speed.speed-normal { --ep: #8d8d92; }
+.effort-pop.view-speed.speed-fast { --ep: #f5c04a; }
+.effort-pop.view-speed.speed-ultrafast { --ep: #a855f7; }
+.ep-head { display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; gap: 6px; margin-bottom: 12px; }
+.ep-icon, .ep-back { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #9a9a9f; }
+.ep-icon:hover, .ep-back:hover { background: #2a2a2e; color: #fff; }
+.ep-icon svg, .ep-back svg { width: 18px; height: 18px; }
+.ep-back svg { transform: rotate(180deg); }
+.ep-bolt svg { fill: none; }
+.ep-bolt.active { color: var(--ep); background: color-mix(in srgb, var(--ep) 14%, transparent); }
+.ep-bolt.active svg { fill: currentColor; stroke: none; }
+.ep-title { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.ep-value { font-size: 21px; font-weight: 600; line-height: 1.2; color: var(--ep); }
+.ep-plain { text-align: center; font-weight: 600; }
+.ep-model { display: flex; align-items: center; gap: 2px; color: #c9c9ce; font-size: 13.5px; padding: 1px 4px; border-radius: 6px; }
+.ep-model:hover { color: #fff; }
+.ep-model svg { width: 13px; height: 13px; }
+.ep-track { position: relative; height: 40px; border-radius: 999px; background: #2b2b2f; cursor: pointer; touch-action: none; outline: none; }
+.ep-track:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ep) 60%, transparent); }
+.ep-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--ep); transition: width .18s cubic-bezier(.2,.8,.2,1), background .2s; }
+.ep-dot { position: absolute; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: rgba(255,255,255,.35); pointer-events: none; }
+.ep-knob { position: absolute; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.45);
+  transition: left .18s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.ep-hint { margin: 10px 2px 0; text-align: center; font-size: 12px; color: var(--muted); }
+.view-speed.speed-ultrafast .ep-value { background: linear-gradient(90deg, #a855f7, #e879f9, #818cf8, #a855f7); background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: ultra-shift 2.4s linear infinite; }
+.view-speed.speed-ultrafast .ep-fill { background: linear-gradient(90deg, #7c3aed, #c084fc, #e879f9, #7c3aed); background-size: 300% 100%; animation: ultra-shift 2.4s linear infinite; box-shadow: 0 0 18px rgba(168,85,247,.45); }
+.view-speed.speed-ultrafast .ep-bolt.active { animation: ultra-glow 1.6s ease-in-out infinite; }
+@keyframes ultra-shift { to { background-position: 300% 0; } }
+@keyframes ultra-glow { 50% { filter: drop-shadow(0 0 6px rgba(192,132,252,.9)); } }
+.ep-models { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow: auto; }
+.ep-models button { display: flex; flex-direction: column; align-items: flex-start; padding: 8px 10px; border-radius: 10px; text-align: left; }
+.ep-models button:hover { background: #2a2a2e; }
+.ep-models button.on { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.ep-models small { color: var(--muted); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .view-speed.speed-ultrafast .ep-value, .view-speed.speed-ultrafast .ep-fill, .effort-pill.speed-ultrafast svg, .view-speed.speed-ultrafast .ep-bolt.active { animation: none; } }
+@media (max-width: 520px) { .effort-pill span { display: none; } .effort-pill { padding: 0 8px; } }
 
 /* menu (bot settings) */
 .menu { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: 340px; background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.7); z-index: 20; }

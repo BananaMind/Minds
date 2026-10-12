@@ -5,7 +5,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { MindsClient, hostAlive, readHostInfo, MINDS_HOME, installWindowsAutostart, uninstallWindowsAutostart, launchAgentPlist } from '@minds/core';
+import { MindsClient, hostAlive, readHostInfo, MINDS_HOME, installWindowsAutostart, uninstallWindowsAutostart, launchAgentPlist } from '@bananamind/minds-core';
 import { runChat } from '../src/chat.js';
 import { pick } from '../src/pick.js';
 import { c, botLine, glyph, md, clipLine } from '../src/render.js';
@@ -64,9 +64,9 @@ function findBot(state, q) {
 
 async function daemon() {
   const sub = args[0] || 'status';
-  const bin = fileURLToPath(new URL('../../core/bin/mindsd.js', import.meta.url));
+  const bin = fileURLToPath(import.meta.resolve('@bananamind/minds-core/mindsd'));
   if (sub === 'start') {
-    const { ensureHost } = await import('@minds/core');
+    const { ensureHost } = await import('@bananamind/minds-core');
     const i = await ensureHost(); return console.log(c.green(`Minds host running`) + c.gray(` (pid ${i.pid}, port ${i.port})`));
   }
   if (sub === 'status') {
@@ -81,7 +81,7 @@ async function daemon() {
     if (process.platform === 'win32') {
       if (sub === 'uninstall') { uninstallWindowsAutostart(); return console.log('Removed Windows sign-in startup.'); }
       installWindowsAutostart(bin);
-      const { ensureHost } = await import('@minds/core');
+      const { ensureHost } = await import('@bananamind/minds-core');
       await ensureHost();
       return console.log(c.green('Installed.') + ' The host now starts in the background when you sign in to Windows.');
     }

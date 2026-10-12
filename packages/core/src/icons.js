@@ -5,6 +5,7 @@ export const ICON_COLORS = [
   '#a259e6', '#17b8c9', '#e8508f', '#8cc63f', '#ff8a3d', '#5b6cf0',
 ];
 export const ICON_FACES = 6;
+export const botColor = (bot) => ICON_COLORS[(bot.icon?.color ?? 0) % ICON_COLORS.length];
 
 export function pickIcon(used = []) {
   const key = (i) => `${i.shape}-${i.color}`;

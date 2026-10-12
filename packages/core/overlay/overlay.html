@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; pointer-events: none; font: 600 12px system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #c { position: absolute; left: 0; top: 0; opacity: 0; transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s; will-change: transform; --bot: #1d6fe8; }
+  #c.on { opacity: 1; }
+  #c.jump { transition: opacity .2s; }
+  /* Distinct from a system pointer: rounded arrow in the bot's color, white rim and a glow. */
+  #arrow { position: absolute; left: -3px; top: -2px; width: 30px; height: 30px; filter: drop-shadow(0 0 6px var(--bot)) drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+  #label { position: absolute; left: 24px; top: 24px; white-space: nowrap; padding: 4px 10px 4px 8px; border-radius: 999px; color: #fff; background: var(--bot);
+    border: 1.5px solid rgba(255,255,255,.9); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; gap: 6px; }
+  #label i { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1.2s infinite; }
+  #act { font-weight: 500; opacity: .85; }
+  .ring { position: absolute; left: -18px; top: -18px; width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--bot); animation: ring .5s ease-out forwards; }
+  /* "Looking at your screen": a glowing frame in the bot's color plus a label, nothing like a pointer. */
+  #look { position: fixed; inset: 0; opacity: 0; transition: opacity .35s; --bot: #1d6fe8; }
+  #look.on { opacity: 1; }
+  #look .frame { position: absolute; inset: 0; border: 3px solid var(--bot); box-shadow: inset 0 0 28px color-mix(in srgb, var(--bot) 70%, transparent); animation: breathe 1.6s ease-in-out infinite; }
+  #look .tag { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 10px;
+    border-radius: 999px; background: rgba(16,16,18,.88); color: #fff; border: 1.5px solid var(--bot); box-shadow: 0 4px 18px rgba(0,0,0,.4); white-space: nowrap; }
+  #look .tag svg { width: 18px; height: 18px; fill: none; stroke: var(--bot); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  #look .tag.hidden { display: none; }
+  @keyframes breathe { 50% { opacity: .55; } }
+  @keyframes ring { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
+  @keyframes blink { 50% { opacity: .35; } }
+</style>
+</head>
+<body>
+<div id="look"><div class="frame"></div>
+  <div class="tag"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span><b id="lookName"></b> is looking at your screen</span></div>
+</div>
+<div id="c">
+  <svg id="arrow" viewBox="0 0 30 30"><path d="M4 3.5 L25 13.2 L15.6 15.8 L11.6 25.5 Z" style="fill: var(--bot)" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>
+  <div id="label"><i></i><span id="name"></span><span id="act"></span></div>
+</div>
+<script>
+  const c = document.getElementById('c');
+  const WORDS = { click: 'clicking', press: 'dragging', drag: 'dragging', scroll: 'scrolling', type: 'typing…', key: 'pressing keys', move: '' };
+  const look = document.getElementById('look');
+  window.botLook = (s) => {
+    if (!s) { look.classList.remove('on'); return; }
+    look.style.setProperty('--bot', s.color || '#1d6fe8');
+    document.getElementById('lookName').textContent = s.name || 'A bot';
+    look.querySelector('.tag').classList.toggle('hidden', !s.label);
+    look.classList.add('on');
+  };
+  window.botCursor = (s) => {
+    if (!s) { c.classList.remove('on'); return; }
+    const wasOn = c.classList.contains('on');
+    c.classList.toggle('jump', !wasOn);
+    c.style.setProperty('--bot', s.color || '#1d6fe8');
+    c.style.transform = `translate(${s.x}px, ${s.y}px)`;
+    document.getElementById('name').textContent = s.name || 'Bot';
+    document.getElementById('act').textContent = WORDS[s.action] || '';
+    c.classList.add('on');
+    if (s.action === 'click' || s.action === 'press') {
+      const r = document.createElement('div'); r.className = 'ring';
+      setTimeout(() => { c.appendChild(r); setTimeout(() => r.remove(), 600); }, 240);
+    }
+  };
+</script>
+</body>
+</html>

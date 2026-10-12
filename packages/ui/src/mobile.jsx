@@ -1,7 +1,7 @@
 // Mobile entry: pair with a computer (QR), then run the same app over a P2P connection.
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import jsQR from 'jsqr';
-import { PhoneClient, createP2pApi, idbStorage, recentLog } from '@minds/p2p/client';
+import { PhoneClient, createP2pApi, idbStorage, recentLog } from '@bananamind/minds-p2p/client';
 import { App } from './App.jsx';
 
 export const isMobile = () => Boolean(window.Capacitor?.isNativePlatform?.()) || new URLSearchParams(location.search).has('mobile');

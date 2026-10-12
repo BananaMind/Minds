@@ -1,12 +1,39 @@
 {
-  "name": "@minds/cli",
-  "version": "0.1.0",
+  "name": "@bananamind/minds-cli",
+  "version": "0.1.1",
+  "description": "Terminal client for Minds: chat with your personal AI bots and manage the host.",
+  "license": "MIT",
   "type": "module",
+  "keywords": [
+    "ai",
+    "agent",
+    "bots",
+    "cli",
+    "terminal",
+    "minds"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BananaMind/Minds.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/BananaMind/Minds#readme",
+  "bugs": "https://github.com/BananaMind/Minds/issues",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
   "bin": {
     "minds": "bin/minds.js"
   },
   "dependencies": {
-    "@minds/core": "*",
+    "@bananamind/minds-core": "^0.1.1",
     "qrcode": "^1.5.4"
   }
 }

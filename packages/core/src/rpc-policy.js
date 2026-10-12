@@ -3,7 +3,7 @@
 // read tool logs and manage schedules, but cannot touch settings, keys, sign-in, host lifecycle,
 // bot deletion, or pairing — and cannot escalate a bot to bypass mode (checked in Host.call).
 const MOBILE_ALLOWED = new Set([
-  'state', 'bots.create', 'bots.update',
+  'state', 'bots.create', 'bots.update', 'models.speeds',
   'chat.history', 'chat.send', 'chat.stop', 'chat.answer', 'chat.markRead',
   'tools.log', 'search',
   'schedules.list', 'schedules.setEnabled', 'schedules.delete',

@@ -17,7 +17,7 @@
     "desktop:win": "npm run ui:build && node scripts/desktop-package.mjs",
     "desktop:mac": "npm run ui:build && node scripts/desktop-package.mjs --mac",
     "desktop:linux": "npm run ui:build && node scripts/desktop-package.mjs --linux",
-    "test": "node --test packages/core/test/ packages/p2p/test/"
+    "test": "node --test \"packages/core/test/*.test.mjs\" \"packages/p2p/test/*.test.mjs\""
   },
   "engines": {
     "node": ">=20"

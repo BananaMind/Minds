@@ -94,7 +94,8 @@ test('safety heuristics', () => {
   assert.equal(heuristic(ctx, 'read_file', { path: 'notes.md' }), null);
   assert.equal(heuristic(ctx, 'read_file', { path: '~/.codex/auth.json' }).hard, true);
   assert.equal(heuristic(ctx, 'write_file', { path: '~/.ssh/authorized_keys' }).hard, true);
-  assert.ok(heuristic(ctx, 'write_file', { path: '/etc/hosts' }));
+  // A system file on this platform (on Windows, /etc/hosts is just D:\etc\hosts).
+  assert.ok(heuristic(ctx, 'write_file', { path: process.platform === 'win32' ? 'C:\\Windows\\System32\\drivers\\etc\\hosts' : '/etc/hosts' }));
 });
 
 test('Windows safety recognizes case-insensitive credential, system and PowerShell paths', () => {
@@ -166,7 +167,10 @@ test('file tools: write, read, edit (uniqueness), exec', async () => {
   await t('edit_file').run(ctx, { path: 'sub/a.txt', old_string: 'two', new_string: '2', replace_all: true });
   assert.equal(fs.readFileSync(path.join(ws, 'sub/a.txt'), 'utf8'), '1\n2\n2\n');
   const out = await t('exec_command').run(ctx, { command: process.platform === 'win32' ? 'Write-Output hello; (Get-Location).Path; exit 3' : 'echo hello && pwd; exit 3' });
-  assert.match(out, /hello/); assert.ok(out.includes(ws)); assert.match(out, /exit code: 3/);
+  assert.match(out, /hello/);
+  // Windows may report the long form of a short (8.3) temp path, in any case.
+  assert.ok([ws, fs.realpathSync.native(ws)].some((p) => out.toLowerCase().includes(p.toLowerCase())), out);
+  assert.match(out, /exit code: 3/);
   const slow = await t('exec_command').run(ctx, { command: process.platform === 'win32' ? 'Start-Sleep -Seconds 5' : 'sleep 5', timeout_seconds: 1 });
   assert.match(slow, /timeout/);
 });
